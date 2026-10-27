@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moonlit Blossom Grove — 3D ASCII</title>
+<style>
+  html,body{margin:0;height:100%;background:#04050a;overflow:hidden;
+    font-family:ui-monospace,Consolas,"Courier New",monospace;color:#cfd6e6;}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;display:block;
+     image-rendering:pixelated;image-rendering:crisp-edges;cursor:crosshair;}
+  .ov{position:fixed;pointer-events:none;user-select:none;z-index:3}
+  #title{left:0;right:0;top:7vh;text-align:center;transition:opacity 3s ease}
+  #title h1{margin:0;font-weight:400;letter-spacing:.42em;
+    font-size:clamp(16px,3vw,38px);color:#ffeaf3;
+    text-shadow:0 0 22px rgba(255,150,195,.6),0 0 7px rgba(255,255,255,.4)}
+  #title p{margin:.9em 0 0;letter-spacing:.3em;font-size:clamp(9px,1.1vw,14px);
+    color:#a8b6d4;opacity:.85}
+  #hint{left:0;right:0;bottom:12px;text-align:center;font-size:12px;
+    letter-spacing:.14em;color:#8b99b6;opacity:.85;line-height:1.9}
+  #hint b{color:#ffcede;font-weight:500}
+  #hud{right:12px;top:10px;font-size:11px;color:#77839e;letter-spacing:.1em;
+    text-align:right;line-height:1.6}
+  #hud b{color:#c9a8bd;font-weight:500}
+  #auto{position:fixed;right:12px;top:98px;z-index:4;pointer-events:auto;
+    font:inherit;font-size:10.5px;letter-spacing:.14em;padding:6px 12px;
+    color:#8b99b6;background:rgba(18,13,30,.5);cursor:pointer;
+    border:1px solid rgba(139,153,182,.34);border-radius:999px;
+    user-select:none;-webkit-user-select:none;backdrop-filter:blur(3px);
+    transition:color .25s,background .25s,border-color .25s,box-shadow .25s}
+  #auto:hover{background:rgba(34,23,52,.72);color:#cfd6e6}
+  #auto .dot{font-size:9px;vertical-align:1px}
+  #auto.on{color:#ffcede;border-color:rgba(255,150,195,.62);
+    background:rgba(46,22,44,.5);box-shadow:0 0 15px rgba(255,150,195,.25)}
+  /* party frame + quest */
+  #status{left:14px;top:12px;font-size:11px;line-height:1.5;letter-spacing:.08em;
+    color:#cfd6e6;text-shadow:0 0 10px rgba(0,0,0,.85);white-space:nowrap}
+  #status .pf{border:1px solid rgba(255,206,222,.26);border-radius:6px;
+    padding:7px 11px 8px;background:rgba(10,7,18,.55);backdrop-filter:blur(3px);
+    box-shadow:0 0 20px rgba(0,0,0,.5)}
+  #status .pn{color:#ffcede;letter-spacing:.22em;font-size:10.5px;margin-bottom:5px}
+  #status .pl{letter-spacing:.05em;color:#9fb0cf}
+  #status .hb{color:#ff7a94;text-shadow:0 0 9px rgba(255,90,130,.5);letter-spacing:0}
+  #status .mb{color:#7fb6ff;text-shadow:0 0 9px rgba(90,150,255,.45);letter-spacing:0}
+  #status .q{margin-top:9px;color:#ffcede;font-size:11px;letter-spacing:.1em;
+    max-width:46vw;white-space:normal;line-height:1.6}
+  #status .q .lab{color:#8b99b6;display:block;font-size:9px;letter-spacing:.3em}
+  #status .q b{color:#fff}
+  /* boss bar */
+  #boss{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:4;width:min(420px,52vw);
+    text-align:center;opacity:0;transition:opacity .25s ease}
+  #boss.show{opacity:1}
+  #boss .bn{color:#ffb0a0;letter-spacing:.26em;font-size:11px;margin-bottom:5px;
+    text-shadow:0 0 12px rgba(255,90,60,.55);text-align:center}
+  #boss .bb{height:12px;border:1px solid rgba(255,140,120,.5);border-radius:3px;
+    background:rgba(10,6,10,.6);overflow:hidden}
+  #boss .bf{height:100%;background:linear-gradient(90deg,#ff5a3c,#ffb060);
+    box-shadow:0 0 14px rgba(255,110,60,.6);transition:width .12s linear}
+  /* dialogue */
+  #dlg{position:fixed;left:50%;transform:translateX(-50%) translateY(8px);
+    bottom:60px;z-index:5;width:min(700px,88vw);padding:13px 17px 15px;
+    border-radius:12px;background:rgba(11,8,19,.88);
+    border:1px solid rgba(255,206,222,.30);
+    box-shadow:0 0 34px rgba(255,150,195,.16);backdrop-filter:blur(4px);
+    color:#e9edf8;font-size:13px;line-height:1.72;letter-spacing:.03em;
+    opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+  #dlg.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #dlg .who{display:block;color:#ffcede;letter-spacing:.24em;font-size:10.5px;margin-bottom:6px}
+  #dlg .more{position:absolute;right:15px;bottom:9px;color:#7b87a4;font-size:10px;letter-spacing:.14em}
+  /* interact prompt */
+  #prompt{left:50%;transform:translateX(-50%);bottom:120px;z-index:4;text-align:center;
+    font-size:12px;letter-spacing:.16em;color:#ffcede;padding:5px 12px;
+    border-radius:999px;background:rgba(20,14,34,.55);
+    border:1px solid rgba(255,206,222,.28);opacity:0;transition:opacity .2s ease}
+  #prompt.show{opacity:1}
+  #prompt b{color:#fff}
+  /* damage vignette flash */
+  #flash{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse at 50% 50%,rgba(255,40,70,0) 45%,rgba(255,30,60,.34));
+    transition:opacity .3s ease}
+  #flash.hit{opacity:1;transition:opacity .05s ease}
+  #start{position:fixed;inset:0;display:flex;flex-direction:column;gap:1.1em;
+    align-items:center;justify-content:center;z-index:6;cursor:pointer;
+    background:radial-gradient(ellipse at 50% 58%,rgba(20,14,34,.35),rgba(3,4,10,.9));
+    color:#ffeaf3;letter-spacing:.34em;font-size:13px;transition:opacity .9s ease}
+  #start span{font-size:clamp(20px,4.4vw,52px);letter-spacing:.2em;
+    text-shadow:0 0 26px rgba(255,150,195,.65),0 0 8px rgba(255,255,255,.5)}
+  #start small{letter-spacing:.2em;color:#a8b6d4;font-size:11px;line-height:2}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="start">
+  <span>月 の 庭</span>
+  <small>click to enter the grove<br>( sound on · click to look · esc to release )</small>
+</div>
+<div class="ov" id="title" style="opacity:0">
+  <h1>MOONLIT BLOSSOM GROVE</h1>
+  <p>a chill 3D ASCII night walk</p>
+</div>
+<div class="ov" id="hud"></div>
+<button id="auto" class="on" type="button" title="toggle automatic quality"><span class="dot">●</span> AUTO QUALITY</button>
+<div class="ov" id="status"></div>
+<div id="boss"></div>
+<div id="dlg"></div>
+<div class="ov" id="prompt"></div>
+<div class="ov" id="hint">
+  <b>W A S D</b> move &nbsp;·&nbsp; <b>SHIFT</b> run &nbsp;·&nbsp; <b>SPACE</b>/<b>J</b> sword &nbsp;·&nbsp;
+  <b>E</b> talk &nbsp;·&nbsp; <b>MOUSE</b> look &nbsp;·&nbsp; <b>1–5</b> quality &nbsp;·&nbsp;
+  <b>O</b> auto &nbsp;·&nbsp; <b>M</b> mute &nbsp;·&nbsp; <b>H</b> hud
+</div>
+<script>
+'use strict';
+(function(){
+/* ==========================================================================
+   MOONLIT BLOSSOM GROVE
+   A software 3D renderer that shades a night landscape, then paints it as
+   colored, dithered ASCII glyphs. No libraries, no assets, no network.
+   ========================================================================== */
+
+/* ------------------------------ tiny math ------------------------------- */
+const TAU = Math.PI * 2;
+const clamp = (v,a,b) => v < a ? a : (v > b ? b : v);
+const lerp  = (a,b,t) => a + (b-a)*t;
+const smoothstep = (e0,e1,x) => { const t = clamp((x-e0)/(e1-e0),0,1); return t*t*(3-2*t); };
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+let SITE = mulberry32(0x5eed1337);
+const rnd = () => SITE();
+const rr  = (a,b) => a + (b-a)*SITE();
+const ri  = (a,b) => Math.floor(a + (b-a+1)*SITE());
+
+/* value noise -------------------------------------------------------------- */
+function hash2(x,y){
+  let h = Math.imul(x|0, 374761393) + Math.imul(y|0, 668265263);
+  h = Math.imul(h ^ h >>> 13, 1274126177);
+  return ((h ^ h >>> 16) >>> 0) / 4294967296;
+}
+function vnoise(x,y){
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const u = x - xi, v = y - yi;
+  const su = u*u*(3-2*u), sv = v*v*(3-2*v);
+  const a = hash2(xi,yi),   b = hash2(xi+1,yi);
+  const c = hash2(xi,yi+1), d = hash2(xi+1,yi+1);
+  const t = a + (b-a)*su, bo = c + (d-c)*su;
+  return t + (bo-t)*sv;
+}
+function fbm(x,y,oct){
+  let s = 0, amp = 0.5, f = 1, norm = 0;
+  for (let i=0;i<oct;i++){ s += amp*vnoise(x*f, y*f); norm += amp; amp *= 0.5; f *= 2.03; }
+  return s / norm;
+}
+
+/* ------------------------------ the world ------------------------------- */
+const WATER   = 0.0;          // water plane height
+let playerX = 2, playerZ = -2, playerY = 0;   // declared early: world gen uses them
+const LAKE_X  = -26, LAKE_Z = 24, LAKE_R = 24;
+const MOON_AZ = -0.95, MOON_EL = 0.30;
+const MOONX = Math.sin(MOON_AZ)*Math.cos(MOON_EL);
+const MOONY = Math.sin(MOON_EL);
+const MOONZ = Math.cos(MOON_AZ)*Math.cos(MOON_EL);
+
+function terrainY(x,z){
+  let h = 2.30*Math.sin(x*0.0210+0.70)*Math.cos(z*0.0190-0.50)
+        + 1.15*Math.sin(x*0.0460-1.30)*Math.cos(z*0.0510+0.90)
+        + 0.50*Math.sin(x*0.1040+2.40)*Math.cos(z*0.0970-1.10)
+        + 0.18*Math.sin(x*0.2100+z*0.1700+0.60);
+  h += 2.9;
+  const r  = Math.hypot(x,z);
+  const rk = Math.max(0,(r-62)/110);
+  h += rk*rk*17.0;                                   // hills rising outward
+  const dl = Math.hypot(x-LAKE_X, z-LAKE_Z);         // pond basin
+  const k  = Math.max(0, 1 - dl/LAKE_R);
+  h -= 8.4*k*k*(1.35-0.35*k);
+  return h;
+}
+
+/* baked heightfield / normal / albedo grids ------------------------------- */
+const GN = 513, GH_EXT = 256, GINV = 1;              // 1 world unit per cell
+const Hg = new Float32Array(GN*GN);
+const Ng = new Float32Array(GN*GN*3);
+const Cg = new Float32Array(GN*GN*3);
+
+function bakeWorld(){
+  for (let j=0;j<GN;j++){
+    const z = j - GH_EXT;
+    for (let i=0;i<GN;i++){
+      const x = i - GH_EXT;
+      Hg[j*GN+i] = terrainY(x,z);
+    }
+  }
+  // normals from finite differences on the baked height
+  for (let j=0;j<GN;j++){
+    for (let i=0;i<GN;i++){
+      const xm = Hg[j*GN + (i>0?i-1:i)];
+      const xp = Hg[j*GN + (i<GN-1?i+1:i)];
+      const zm = Hg[(j>0?j-1:j)*GN + i];
+      const zp = Hg[(j<GN-1?j+1:j)*GN + i];
+      let nx = (xm-xp)*0.5, ny = 1, nz = (zm-zp)*0.5;
+      const il = 1/Math.hypot(nx,ny,nz);
+      Ng[(j*GN+i)*3  ] = nx*il;
+      Ng[(j*GN+i)*3+1] = ny*il;
+      Ng[(j*GN+i)*3+2] = nz*il;
+    }
+  }
+  // albedo: mossy grass, dirt patches, shore sand, rock on steep slopes, pond bed
+  for (let j=0;j<GN;j++){
+    const z = j - GH_EXT;
+    for (let i=0;i<GN;i++){
+      const x = i - GH_EXT, o = j*GN+i;
+      const h = Hg[o], ny = Ng[o*3+1];
+      const patch = fbm(x*0.035+11.3, z*0.035-4.7, 3);
+      const fine  = fbm(x*0.55, z*0.55, 2);
+      let r,g,b;
+      // grass base — mossy, moon-silvered green
+      const gv = 0.42 + 0.58*fine;
+      r = 0.100 + 0.090*gv;
+      g = 0.225 + 0.190*gv;
+      b = 0.085 + 0.070*gv;
+      // blossom litter under the moon — faint pink moss
+      const pk = smoothstep(0.60,0.86,patch);
+      r = lerp(r, 0.34, pk*0.45); g = lerp(g, 0.22, pk*0.45); b = lerp(b, 0.28, pk*0.45);
+      // dry dirt / trodden path
+      const dirt = smoothstep(0.70,0.84,fbm(x*0.021-3.1, z*0.021+7.9, 3));
+      r = lerp(r, 0.255, dirt); g = lerp(g, 0.205, dirt); b = lerp(b, 0.145, dirt);
+      // pale stone on steep ground
+      const rock = smoothstep(0.94, 0.80, ny);
+      r = lerp(r, 0.215, rock); g = lerp(g, 0.215, rock); b = lerp(b, 0.235, rock);
+      // shoreline sand
+      const sand = smoothstep(1.6,0.05,h) * smoothstep(-0.6,0.1,h);
+      r = lerp(r, 0.360, sand); g = lerp(g, 0.315, sand); b = lerp(b, 0.215, sand);
+      // pond bed (seen through water)
+      if (h < WATER){
+        const d = clamp(-h/5,0,1);
+        r = lerp(0.105, 0.030, d); g = lerp(0.115, 0.045, d); b = lerp(0.115, 0.060, d);
+      }
+      Cg[o*3  ] = r; Cg[o*3+1] = g; Cg[o*3+2] = b;
+    }
+  }
+}
+
+/* bilinear height — hot path, no clamping (only valid inside the baked grid) */
+function hNear(x,z){
+  const fx = x + GH_EXT, fz = z + GH_EXT;
+  const i = fx|0, j = fz|0, u = fx-i, v = fz-j, o = j*GN+i;
+  const t = Hg[o] + (Hg[o+1]-Hg[o])*u;
+  const b = Hg[o+GN] + (Hg[o+GN+1]-Hg[o+GN])*u;
+  return t + (b-t)*v;
+}
+/* bilinear height ---------------------------------------------------------- */
+function hAt(x,z){
+  let fx = x + GH_EXT, fz = z + GH_EXT;
+  if (fx < 0) fx = 0; else if (fx > GN-1.0001) fx = GN-1.0001;
+  if (fz < 0) fz = 0; else if (fz > GN-1.0001) fz = GN-1.0001;
+  const i = fx|0, j = fz|0, u = fx-i, v = fz-j, o = j*GN+i;
+  const t = Hg[o] + (Hg[o+1]-Hg[o])*u;
+  const b = Hg[o+GN] + (Hg[o+GN+1]-Hg[o+GN])*u;
+  return t + (b-t)*v;
+}
+function bilin(A,x,z,stride,off){
+  let fx = x + GH_EXT, fz = z + GH_EXT;
+  if (fx < 0) fx = 0; else if (fx > GN-1.0001) fx = GN-1.0001;
+  if (fz < 0) fz = 0; else if (fz > GN-1.0001) fz = GN-1.0001;
+  const i = fx|0, j = fz|0, u = fx-i, v = fz-j;
+  const o = (j*GN+i)*stride + off, o2 = o + GN*stride;
+  const t = A[o] + (A[o+stride]-A[o])*u;
+  const b = A[o2] + (A[o2+stride]-A[o2])*u;
+  return t + (b-t)*v;
+}
+
+/* mountain skyline, baked as a function of azimuth ------------------------- */
+const AZn = 4096;
+const Crest1 = new Float32Array(AZn), Crest2 = new Float32Array(AZn), Crest3 = new Float32Array(AZn);
+function bakeSkyline(){
+  for (let i=0;i<AZn;i++){
+    const a = i/AZn*TAU;
+    const cx = Math.cos(a), sy = Math.sin(a);
+    // three ridges, far to near
+    let c1 = 0.085 + 0.075*fbm(cx*2.6+30.0, sy*2.6-12.0, 4)
+                 + 0.040*fbm(cx*6.1-7.5,  sy*6.1+3.2, 3);
+    let c2 = 0.040 + 0.055*fbm(cx*3.4+61.0, sy*3.4+22.0, 4)
+                 + 0.022*fbm(cx*9.3+1.5,  sy*9.3-8.4, 3);
+    let c3 = 0.008 + 0.030*fbm(cx*5.7-40.0,sy*5.7+50.0, 4);
+    Crest1[i] = c1; Crest2[i] = c2; Crest3[i] = c3;
+  }
+}
+function crestAt(tab, azfrac){
+  const f = azfrac*AZn;
+  const i = f|0, u = f-i;
+  const a = tab[i & (AZn-1)], b = tab[(i+1) & (AZn-1)];
+  return a + (b-a)*u;
+}
+
+/* ------------------------- point-soup shape kit -------------------------- */
+function sph(out,cx,cy,cz,r,n,cr,cg,cb,vary){
+  for (let i=0;i<n;i++){
+    const u = SITE()*2-1, ph = SITE()*TAU, s = Math.sqrt(1-u*u);
+    const rad = r*(0.86+0.14*SITE());
+    const k = 1 + (SITE()*2-1)*vary;
+    out.push(cx+Math.cos(ph)*s*rad, cy+u*rad, cz+Math.sin(ph)*s*rad, cr*k, cg*k, cb*k);
+  }
+}
+function taper(out,x0,y0,z0,x1,y1,z1,r0,r1,n,cr,cg,cb,vary){
+  for (let i=0;i<n;i++){
+    const t = SITE(), a = SITE()*TAU, rad = lerp(r0,r1,t)*(0.75+0.5*SITE());
+    const k = 1 + (SITE()*2-1)*vary;
+    out.push(lerp(x0,x1,t)+Math.cos(a)*rad, lerp(y0,y1,t), lerp(z0,z1,t)+Math.sin(a)*rad,
+             cr*k, cg*k, cb*k);
+  }
+}
+function box(out,cx,cy,cz,hx,hy,hz,yaw,step,cr,cg,cb,vary){
+  const cs = Math.cos(yaw), sn = Math.sin(yaw);
+  const fx = Math.max(2,Math.round(hx*2/step)), fy = Math.max(2,Math.round(hy*2/step)), fz = Math.max(2,Math.round(hz*2/step));
+  const put = (x,y,z)=>{
+    const k = 1 + (SITE()*2-1)*vary;
+    out.push(cx + x*cs + z*sn, cy + y, cz - x*sn + z*cs, cr*k, cg*k, cb*k);
+  };
+  for (let i=0;i<=fx;i++) for (let k=0;k<=fy;k++){
+    const x = -hx + 2*hx*i/fx, y = -hy + 2*hy*k/fy;
+    if (SITE()<0.75){ put(x,y, hz); put(x,y,-hz); }
+  }
+  for (let i=0;i<=fx;i++) for (let k=0;k<=fz;k++){
+    const x = -hx + 2*hx*i/fx, z = -hz + 2*hz*k/fz;
+    if (SITE()<0.85){ put(x, hy, z); put(x,-hy,z); }
+  }
+  for (let i=0;i<=fz;i++) for (let k=0;k<=fy;k++){
+    const z = -hz + 2*hz*i/fz, y = -hy + 2*hy*k/fy;
+    if (SITE()<0.35){ put(hx,y,z); put(-hx,y,z); }
+  }
+}
+function cyl(out,cx,cy,cz,r0,r1,h,n,cr,cg,cb,vary){
+  for (let i=0;i<n;i++){
+    const t = SITE(), a = SITE()*TAU, rad = lerp(r0,r1,t);
+    const k = 1 + (SITE()*2-1)*vary;
+    out.push(cx+Math.cos(a)*rad, cy + h*t, cz+Math.sin(a)*rad, cr*k, cg*k, cb*k);
+  }
+}
+
+/* ------------------------------- the forest ------------------------------ */
+const BARK = [0.185,0.140,0.115];
+const trees = [];
+function buildTree(px,pz,scale){
+  const pts = [];
+  const gy = hAt(px,pz);
+  const H  = rr(5.2,7.6)*scale;
+  const lean = rr(-0.10,0.10), leanZ = rr(-0.10,0.10);
+  const topX = px + lean*H, topZ = pz + leanZ*H, topY = gy + H;
+  // trunk
+  const tn = Math.round(150*scale);
+  for (let i=0;i<tn;i++){
+    const t = SITE();
+    const r = lerp(0.30,0.10,t)*scale*(0.75+0.5*SITE());
+    const a = SITE()*TAU;
+    const tx = px + lean*H*t, tz = pz + leanZ*H*t, ty = gy + H*t;
+    const k = 0.75+0.45*t;
+    pts.push(tx+Math.cos(a)*r, ty, tz+Math.sin(a)*r, BARK[0]*k, BARK[1]*k, BARK[2]*k, 0.06+0.20*t);
+  }
+  // limbs
+  const limbs = ri(3,5);
+  const limbTips = [];
+  for (let L=0;L<limbs;L++){
+    const ang = L/limbs*TAU + rr(-0.5,0.5);
+    const t0 = rr(0.55,0.78);
+    const len = rr(1.5,3.0)*scale;
+    const x0 = px + lean*H*t0, z0 = pz + leanZ*H*t0, y0 = gy + H*t0;
+    const x1 = x0 + Math.cos(ang)*len, z1 = z0 + Math.sin(ang)*len, y1 = y0 + rr(0.6,1.8)*scale;
+    limbTips.push([x1,y1,z1]);
+    const n = Math.round(46*scale);
+    for (let i=0;i<n;i++){
+      const t = SITE(), a = SITE()*TAU, rad = lerp(0.13,0.05,t)*scale*(0.6+0.8*SITE());
+      pts.push(lerp(x0,x1,t)+Math.cos(a)*rad, lerp(y0,y1,t), lerp(z0,z1,t)+Math.sin(a)*rad,
+               0.20,0.155,0.13, 0.55+0.30*t);
+    }
+  }
+  // blossom canopy — a few overlapping puffs
+  const puffs = [];
+  const cxn = px + lean*H, czn = pz + leanZ*H, cyn = gy + H;
+  puffs.push([cxn, cyn+0.35*scale, czn, rr(2.3,3.0)*scale, rr(1.35,1.75)*scale, rr(2.3,3.0)*scale]);
+  for (const lt of limbTips) puffs.push([lt[0], lt[1]+0.55*scale, lt[2], rr(1.25,1.9)*scale, rr(0.9,1.25)*scale, rr(1.25,1.9)*scale]);
+  puffs.push([cxn, cyn+1.6*scale, czn, rr(1.4,2.0)*scale, rr(0.9,1.2)*scale, rr(1.4,2.0)*scale]);
+  const petalN = Math.round(780*scale*scale);
+  const per = Math.max(1, Math.round(petalN/puffs.length));
+  for (const pf of puffs){
+    for (let i=0;i<per;i++){
+      const u = SITE()*2-1, ph = SITE()*TAU, s = Math.sqrt(1-u*u);
+      const rad = Math.pow(SITE(), 0.34);
+      const x = pf[0] + Math.cos(ph)*s*pf[3]*rad;
+      const y = pf[1] + u*pf[4]*rad;
+      const z = pf[2] + Math.sin(ph)*s*pf[5]*rad;
+      // lacy gaps so canopies read as blossom clusters, not blobs
+      if (fbm(x*0.85+3.3, z*0.85-1.7, 2) * 0.6 + fbm(y*0.9+8.1, x*0.9+2.2, 2) * 0.4 < 0.30) continue;
+      if (SITE() < 0.20) continue;
+      const inner = 1 - clamp(rad,0,1);
+      const shade = 0.55 + 0.45*inner;            // darker inside the cluster
+      const warm  = SITE();
+      const cr = lerp(0.86, 1.00, warm), cg = lerp(0.50, 0.68, warm), cb = lerp(0.62, 0.78, warm);
+      const sway = clamp((y-gy)/H, 0, 1.25);
+      pts.push(x, y, z, cr*shade, cg*shade, cb*shade, sway);
+    }
+  }
+  return { x:px, z:pz, y:gy, phase: SITE()*TAU, pts: new Float32Array(pts) };
+}
+function buildForest(){
+  const placed = [];
+  let tries = 0;
+  while (placed.length < 44 && tries < 4000){
+    tries++;
+    const a = SITE()*TAU, d = 9 + 86*Math.pow(SITE(), 0.72);
+    const x = Math.cos(a)*d, z = Math.sin(a)*d;
+    const y = hAt(x,z);
+    if (y < 0.9) continue;                                   // keep the pond clear
+    if (Math.hypot(x+16.8, z-15.5) < 6) continue;            // keep the torii clear
+    if (Math.hypot(x-playerX, z-playerZ) < 15) continue;     // keep the opening view open
+    let ok = true;
+    for (const p of placed) if (Math.hypot(p[0]-x,p[1]-z) < 6.5) { ok = false; break; }
+    if (!ok) continue;
+    placed.push([x,z]);
+    trees.push(buildTree(x, z, 0.75 + 0.55*SITE() + d*0.006));
+  }
+  // two hero trees framing the opening view
+  const hero = [[3.25, 5.2, 1.32], [-5.1, -3.8, 1.18]];
+  for (const h of hero){
+    if (hAt(h[0],h[1]) < 1.2) continue;
+    trees.push(buildTree(h[0], h[1], h[2]));
+  }
+}
+
+/* --------------------- torii gate, stone lanterns, path ------------------ */
+const statics = [];      // {x,y,z,r,g,b}
+const glows   = [];      // {x,y,z,r,g,b,rad,str}
+function buildShrine(){
+  const TX = -16.8, TZ = 15.5;
+  let fx = TX, fz = TZ;
+  const fl = Math.hypot(fx,fz); fx/=fl; fz/=fl;
+  const pxx = fz, pzz = -fx;                       // pillar spread axis
+  const yaw = Math.atan2(pxx,pzz);
+  const VERM = [0.62,0.155,0.17];
+  const gy = Math.max(hAt(TX,TZ), WATER-0.6);
+  const H = 6.4, half = 2.7, thick = 0.42;
+  for (const s of [-1,1]){
+    const bx = TX + pxx*half*s, bz = TZ + pzz*half*s;
+    const by = Math.max(hAt(bx,bz), WATER-0.8);
+    box(statics, bx, by + (H+gy-by)*0.5, bz, thick, (H+gy-by)*0.5, thick, yaw, 0.30, VERM[0],VERM[1],VERM[2], 0.10);
+  }
+  box(statics, TX, gy+H+0.5, TZ, half+1.5, 0.30, 0.34, yaw, 0.34, VERM[0]*1.08,VERM[1]*1.05,VERM[2]*1.05, 0.08); // kasagi
+  box(statics, TX, gy+H+0.12, TZ, half+0.35, 0.16, 0.22, yaw, 0.30, VERM[0]*0.85,VERM[1]*0.85,VERM[2]*0.85, 0.08);
+  box(statics, TX, gy+H*0.78, TZ, half+0.15, 0.20, 0.20, yaw, 0.34, VERM[0]*0.92,VERM[1]*0.92,VERM[2]*0.92, 0.08); // nuki
+  // paper lanterns hanging under the kasagi
+  for (const s of [-1,1]){
+    const lx = TX + pxx*(half*0.72)*s, lz = TZ + pzz*(half*0.72)*s;
+    const ly = gy + H*0.78 - 0.75;
+    taper(statics, lx, ly+0.32, lz, lx, ly-0.42, lz, 0.10, 0.62, 90, 0.98,0.84,0.62, 0.10);
+    cyl(statics, lx, ly+0.40, lz, 0.02, 0.02, 0.30, 12, 0.20,0.18,0.16, 0.05);
+    glows.push({x:lx,y:ly,z:lz,r:1.0,g:0.70,b:0.34,rad:2.2,str:0.55});
+  }
+  // stone lanterns along a mossy path
+  const stone = [0.30,0.30,0.32];
+  const pathPts = [[-3.0,-1.5],[-7.5,3.0],[-11.5,8.0],[-14.0,12.4],[-16.0,13.6]];
+  for (const [lx,lz] of pathPts){
+    const ly = hAt(lx,lz);
+    if (ly < 0.15) continue;
+    cyl(statics, lx, ly-0.05, lz, 0.62, 0.50, 0.42, 110, stone[0]*0.6,stone[1]*0.6,stone[2]*0.6, 0.10);
+    cyl(statics, lx, ly+0.36, lz, 0.19, 0.17, 1.05, 90, stone[0]*0.8,stone[1]*0.8,stone[2]*0.8, 0.08);
+    cyl(statics, lx, ly+1.40, lz, 0.50, 0.44, 0.20, 90, stone[0]*0.9,stone[1]*0.9,stone[2]*0.9, 0.08);
+    cyl(statics, lx, ly+1.58, lz, 0.40, 0.34, 0.50, 110, 0.42,0.37,0.28, 0.12);   // fire box
+    taper(statics, lx, ly+2.42, lz, lx, ly+2.05, lz, 0.72, 0.42, 110, stone[0],stone[1],stone[2], 0.08);
+    cyl(statics, lx, ly+2.36, lz, 0.10, 0.06, 0.22, 24, stone[0],stone[1],stone[2], 0.06);
+    glows.push({x:lx,y:ly+1.82,z:lz,r:1.0,g:0.66,b:0.30,rad:1.7,str:0.48});
+  }
+}
+
+/* ----------------------------- sky contents ------------------------------ */
+const stars = [];
+function buildStars(){
+  for (let i=0;i<880;i++){
+    const u = SITE()*2-1, ph = SITE()*TAU, s = Math.sqrt(Math.max(0,1-u*u));
+    const x = Math.cos(ph)*s, y = u, z = Math.sin(ph)*s;
+    if (y < 0.015) continue;
+    const d = x*MOONX + y*MOONY + z*MOONZ;
+    const b = (0.16 + 0.84*Math.pow(SITE(),3.1)) * smoothstep(0.03,0.30,y) * smoothstep(0.995,0.955,d);
+    if (b < 0.02) continue;
+    const t = SITE();
+    stars.push({x,y,z,b,ph:SITE()*TAU,sp:0.7+SITE()*2.2,
+      r:lerp(0.72,1.0,t), g:lerp(0.80,0.97,t), bl:lerp(1.0,0.86,t)});
+  }
+}
+const petals = [], flies = [];
+function buildWeather(){
+  for (let i=0;i<230;i++) petals.push(newPetal(true));
+  for (let i=0;i<56;i++){
+    const a = SITE()*TAU, d = 6 + 46*SITE();
+    const x = LAKE_X*0.55 + Math.cos(a)*d*0.8, z = LAKE_Z*0.55 + Math.sin(a)*d*0.8;
+    flies.push({x, y:hAt(x,z)+rr(0.4,2.4), z, ph:SITE()*TAU, sp:rr(0.25,0.8), r:rr(1.2,3.0), b:0, c:SITE()});
+  }
+}
+function newPetal(init){
+  return {
+    x: playerX + rr(-34,34), z: playerZ + rr(-34,34),
+    y: (init ? rr(0.5,17) : rr(9,17)),
+    sp: rr(0.35,1.05), ph: SITE()*TAU, sw: rr(0.35,1.15), sz: rr(0.6,1.5),
+    tone: SITE(), size: SITE()<0.3?1:0
+  };
+}
+
+/* ------------------------- the folk of the grove -------------------------
+   Everybody who walks is a little point-soup figure, drawn as coloured ASCII
+   splats. Figures are scaled down so the grove feels vast.                    */
+const PS = 0.62;                                   // figure scale
+const PS_HIP = 0.86*PS, PS_SHO = 1.26*PS, PS_HAND = 0.80*PS,
+      PS_LAMP = 1.26*PS, PS_TOP = 1.42*PS;
+
+function scalePts(a, s){ for (let i=0;i<a.length;i+=6){ a[i]*=s; a[i+1]*=s; a[i+2]*=s; } }
+
+/* one humanoid, optionally holding a lantern (left hand) and a katana (right) */
+function buildHumanoid(o){
+  const CLOAK = o.cloak, TRIM = o.trim || [0.86,0.42,0.56], SKIN = o.skin || [0.90,0.79,0.72];
+  const HAIR = o.hair || [0.135,0.115,0.150];
+  const F = { legL:[], legR:[], armL:[], armR:[], torso:[], head:[], hair:[], sword:[] };
+  for (const s of [-1,1]){
+    const p = s<0 ? F.legL : F.legR;
+    taper(p, 0.13*s, 0.86, 0.00, 0.15*s, 0.09, 0.02, 0.105, 0.075, 105, 0.30,0.27,0.38, 0.14);
+    cyl(p, 0.15*s, 0.00, 0.10, 0.095, 0.095, 0.075, 30, 0.26,0.23,0.32, 0.10);
+  }
+  taper(F.torso, 0.0, 1.24, 0.0, 0.0, 0.46, 0.0, 0.215, 0.44, 230, CLOAK[0],CLOAK[1],CLOAK[2], 0.13);
+  taper(F.torso, 0.0, 1.28, 0.0, 0.0, 1.06, 0.0, 0.20, 0.235, 74, CLOAK[0]*1.06,CLOAK[1]*1.06,CLOAK[2]*1.06, 0.10);
+  cyl(F.torso, 0.0, 0.92, 0.0, 0.30, 0.255, 0.17, 100, TRIM[0],TRIM[1],TRIM[2], 0.10);
+  sph(F.torso, 0.0, 1.28, 0.0, 0.20, 74, CLOAK[0]*1.1,CLOAK[1]*1.1,CLOAK[2]*1.1, 0.10);
+  for (const s of [-1,1]){
+    const p = s<0 ? F.armL : F.armR;
+    taper(p, 0.205*s, 1.26, 0.0, 0.285*s, 0.84, 0.06, 0.085, 0.062, 95, CLOAK[0],CLOAK[1],CLOAK[2], 0.13);
+    sph(p, 0.295*s, 0.80, 0.075, 0.062, 30, SKIN[0],SKIN[1],SKIN[2], 0.07);
+  }
+  sph(F.head, 0.0, 1.50, 0.0, 0.135, 110, SKIN[0],SKIN[1],SKIN[2], 0.06);
+  cyl(F.head, 0.0, 1.26, 0.0, 0.075, 0.062, 0.12, 30, SKIN[0]*0.9,SKIN[1]*0.9,SKIN[2]*0.9, 0.05);
+  sph(F.hair, 0.0, 1.545, -0.015, 0.158, 190, HAIR[0],HAIR[1],HAIR[2], 0.16);
+  taper(F.hair, 0.0, 1.52, -0.10, 0.02, 0.86, -0.15, 0.115, 0.055, 140, HAIR[0]*1.1,HAIR[1]*1.1,HAIR[2]*1.15, 0.16);
+  let lamp = null;
+  if (o.lamp){
+    taper(F.armL, -0.40, 0.86, 0.10, -0.40, 0.52, 0.14, 0.085, 0.115, 76, 0.96,0.74,0.42, 0.10);
+    lamp = { x:-0.40, y:0.68, z:0.12 };
+  }
+  if (o.sword){
+    const S = o.steel || [0.82,0.86,0.94];
+    taper(F.sword, 0.315,0.66, 0.10, 0.350,1.98, 0.00, 0.048, 0.009, 110, S[0],S[1],S[2], 0.10);  // blade
+    cyl(F.sword, 0.30, 0.70, 0.12, 0.090, 0.090, 0.045, 26, 0.58,0.46,0.29, 0.09);                  // tsuba
+    cyl(F.sword, 0.30, 0.60, 0.12, 0.040, 0.040, 0.12, 20, 0.24,0.16,0.13, 0.08);                   // grip
+    sph(F.sword, 0.30, 0.53, 0.12, 0.046, 18, TRIM[0],TRIM[1],TRIM[2], 0.10);                       // pommel
+  }
+  return { F, lamp };
+}
+function makeFigure(o, s){
+  const built = buildHumanoid(o), F = built.F, out = { lamp:null };
+  for (const k in F){ scalePts(F[k], s); out[k] = new Float32Array(F[k]); }
+  if (built.lamp) out.lamp = { x:built.lamp.x*s, y:built.lamp.y*s, z:built.lamp.z*s };
+  return out;
+}
+
+/* the player: kimono, paper lantern, katana */
+const CHAR = makeFigure({ cloak:[0.415,0.400,0.520], trim:[0.86,0.42,0.56],
+                          skin:[0.90,0.79,0.72], hair:[0.135,0.115,0.150],
+                          lamp:true, sword:true }, PS);
+
+/* ------------------------------- the folk -------------------------------- */
+const npcs = [];
+function buildNpcs(){
+  const defs = [
+    { name:'ELDER MIKO',    x: 3.30, z: 3.20, face: 3.05, s:1.00,
+      cloak:[0.80,0.78,0.86], trim:[0.88,0.22,0.26], hair:[0.11,0.10,0.13] },
+    { name:'LANTERN KEEPER', x:-4.60, z: 0.60, face: 1.05, s:1.03,
+      cloak:[0.28,0.40,0.40], trim:[0.82,0.64,0.30], hair:[0.28,0.22,0.17] },
+    { name:'LOST TRAVELER',  x: 6.10, z:-4.40, face:-2.30, s:0.97,
+      cloak:[0.40,0.32,0.29], trim:[0.58,0.48,0.36], hair:[0.20,0.17,0.15] },
+  ];
+  for (const d of defs){
+    const y = hAt(d.x, d.z);
+    npcs.push({ name:d.name, x:d.x, z:d.z, y, face:d.face, ph:SITE()*TAU,
+                fig: makeFigure({ cloak:d.cloak, trim:d.trim, hair:d.hair, skin:[0.90,0.79,0.72] }, PS*d.s) });
+  }
+}
+
+/* ------------------------------ monstrosities ---------------------------- */
+const MOBKIND = {
+  wisp: (()=>{
+    const b=[], e=[];
+    sph(b, 0, 0.52, 0, 0.40, 110, 0.16,0.12,0.30, 0.30);
+    taper(b, 0,0.32,0, 0,-0.42,0, 0.32,0.02, 60, 0.12,0.09,0.24, 0.34);
+    sph(e, 0.115,0.58,0.30, 0.050, 12, 1.0,0.48,0.26, 0.06);
+    sph(e,-0.115,0.58,0.30, 0.050, 12, 1.0,0.48,0.26, 0.06);
+    return { body:new Float32Array(b), eyes:new Float32Array(e), glow:[1.0,0.45,0.24],
+             hp:2, spd:2.9, aggro:12, atkR:1.6, dmg:1, radius:0.80, bob:0.22,
+             eyesY:0.58, eyesZoff:0.30, hover:0.42 };
+  })(),
+  brute: (()=>{
+    const b=[], e=[];
+    sph(b, 0,0.72,0, 0.60, 120, 0.17,0.27,0.17, 0.28);
+    taper(b, 0,0.34,0, 0,0.04,0, 0.54,0.30, 60, 0.15,0.23,0.15, 0.25);
+    taper(b, 0.22,1.18,0.0, 0.40,1.60,-0.10, 0.060,0.018, 26, 0.56,0.51,0.43, 0.12);
+    taper(b,-0.22,1.18,0.0,-0.40,1.60,-0.10, 0.060,0.018, 26, 0.56,0.51,0.43, 0.12);
+    sph(e, 0.16,0.90,0.42, 0.062, 14, 1.0,0.32,0.18, 0.06);
+    sph(e,-0.16,0.90,0.42, 0.062, 14, 1.0,0.32,0.18, 0.06);
+    return { body:new Float32Array(b), eyes:new Float32Array(e), glow:[1.0,0.32,0.16],
+             hp:4, spd:1.75, aggro:10, atkR:1.9, dmg:1, radius:1.15, bob:0.10,
+             eyesY:0.90, eyesZoff:0.42, hover:0 };
+  })()
+};
+
+const mobs = [];
+function spawnMobs(){
+  const want = [['wisp',0],['wisp',0],['wisp',0],['brute',0],['brute',0],['wisp',0],['brute',0]];
+  let tries = 0;
+  for (const [kind] of want){
+    for (let guard=0; guard<400; guard++){
+      tries++;
+      const a = SITE()*TAU;
+      const d = mobs.length < 2 ? (13 + 3*SITE()) : (16 + 24*SITE());
+      const x = Math.cos(a)*d, z = Math.sin(a)*d;
+      const y = hAt(x,z);
+      if (y < 0.9) continue;                                  // not in the pond
+      if (Math.hypot(x-playerX, z-playerZ) < 6) continue;     // give the player room
+      if (Math.hypot(x+16.8, z-15.5) < 5) continue;           // keep the shrine clear
+      let ok = true;
+      for (const m of mobs) if (Math.hypot(m.x-x, m.z-z) < 7) { ok = false; break; }
+      if (!ok) continue;
+      const K = MOBKIND[kind];
+      mobs.push({ kind, x, z, y0:y, y, hp:K.hp, maxHp:K.hp, face:SITE()*TAU,
+                  ph:SITE()*TAU, wanderT:0, wx:0, wz:0, atkCD:0, hurtT:0, dead:false, deadT:0,
+                  homeX:x, homeZ:z, aggro:false });
+      break;
+    }
+  }
+}
+
+/* ==========================================================================
+   ASCII FRAMEBUFFER
+   ========================================================================== */
+const RAMP = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+/* the meadow is drawn from blades, not from letters: a stable glyph per spot */
+const GRASS_IDX = [0, 1, 2, 3, 6, 15, 18, 27, 28, 29];
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d', { alpha:false });
+ctx.imageSmoothingEnabled = false;
+const frame = document.createElement('canvas');
+const fctx = frame.getContext('2d');
+let fdata = null, f32 = null;
+
+let cellW = 6, cellH = 12;
+let GW = 0, GH = 0, NC = 0;
+let colR, colG, colB, depth, gwx, gwz, rayX, rayY, rayZ, dith, vig, warm, gsurf;
+let glyphs = [];
+let projX = 1, projY = 1, cxc = 0, cyc = 0, tanH = 0.8, tanV = 0.55;
+let bgR = 0, bgG = 0, bgB = 0;
+const FOV_H = 1.36;
+
+const PRESETS = [
+  {name:'potato', cw:16},   // 1
+  {name:'low',    cw:12},   // 2
+  {name:'medium', cw:9 },   // 3
+  {name:'high',   cw:6 },   // 4
+  {name:'ultra',  cw:4 },   // 5
+];
+let preset = 3;                 // default: 4/5 · high
+const MAXCELLS = 18000;
+
+function buildGlyphs(){
+  const S = 4, w = cellW*S, h = cellH*S;
+  const cc = document.createElement('canvas'); cc.width = w; cc.height = h;
+  const g = cc.getContext('2d', { willReadFrequently:true });
+  glyphs = [];
+  for (let i=0;i<RAMP.length;i++){
+    g.clearRect(0,0,w,h);
+    g.fillStyle = '#fff';
+    g.font = Math.round(h*1.16) + 'px Consolas, "DejaVu Sans Mono", "Courier New", monospace';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(RAMP[i], w/2, h*0.515);
+    const src = g.getImageData(0,0,w,h).data;
+    const m = new Uint8Array(cellW*cellH);
+    let any = 0;
+    for (let y=0;y<cellH;y++) for (let x=0;x<cellW;x++){
+      let acc = 0;
+      for (let sy=0;sy<S;sy++) for (let sx=0;sx<S;sx++) acc += src[((((y*S+sy)*w)+(x*S+sx))<<2)+3];
+      const v = (acc/(S*S))|0;
+      m[y*cellW+x] = v;
+      if (v) any++;
+    }
+    glyphs.push(any ? m : null);
+  }
+}
+
+function resize(){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = Math.max(320, Math.round(window.innerWidth  * dpr));
+  const H = Math.max(240, Math.round(window.innerHeight * dpr));
+  canvas.width = W; canvas.height = H;
+  cellW = PRESETS[preset].cw;
+  cellH = cellW*2;
+  GW = Math.ceil(W/cellW); GH = Math.ceil(H/cellH);
+  while (GW*GH > MAXCELLS && cellW < 40){
+    cellW += 1; cellH = cellW*2;
+    GW = Math.ceil(W/cellW); GH = Math.ceil(H/cellH);
+  }
+  NC = GW*GH;
+  frame.width = GW*cellW; frame.height = GH*cellH;
+  fctx.imageSmoothingEnabled = false;
+  fdata = fctx.createImageData(frame.width, frame.height);
+  f32 = new Uint32Array(fdata.data.buffer);
+  colR = new Float32Array(NC); colG = new Float32Array(NC); colB = new Float32Array(NC);
+  depth = new Float32Array(NC);
+  gwx = new Float32Array(NC); gwz = new Float32Array(NC);
+  rayX = new Float32Array(NC); rayY = new Float32Array(NC); rayZ = new Float32Array(NC);
+  dith = new Float32Array(NC); vig = new Float32Array(NC); warm = new Float32Array(NC);
+  gsurf = new Uint8Array(NC);
+  const aspect = frame.width/frame.height;
+  tanH = Math.tan(FOV_H*0.5);
+  tanV = tanH/aspect;
+  projX = (GW*0.5)/tanH; projY = (GH*0.5)/tanV;
+  cxc = GW*0.5; cyc = GH*0.5;
+  for (let j=0;j<GH;j++){
+    const cdy = (1 - (j+0.5)/GH*2)*tanV;
+    for (let i=0;i<GW;i++){
+      const cdx = ((i+0.5)/GW*2 - 1)*tanH;
+      const il = 1/Math.hypot(cdx,cdy,1);
+      const o = j*GW+i;
+      rayX[o] = cdx*il; rayY[o] = cdy*il; rayZ[o] = il;
+      dith[o] = hash2(i*13+7, j*29+3);
+      const nx = (i+0.5)/GW*2-1, ny = (j+0.5)/GH*2-1;
+      vig[o] = 1 - 0.24*Math.pow(clamp(Math.hypot(nx*0.92,ny*0.98),0,1), 2.6);
+      warm[o] = clamp(ny,0,1);
+    }
+  }
+  buildGlyphs();
+}
+
+/* ==========================================================================
+   CAMERA + RENDER CORE
+   ========================================================================== */
+let camX=0, camY=0, camZ=0;
+let F0=0,F1=0,F2=0, R0=1,R1=0,R2=0, U0=0,U1=1,U2=0;
+const FOG_R = 0.175, FOG_G = 0.160, FOG_B = 0.265;
+const FOG0 = 17, FOG1 = 82;
+const ZEN_R = 0.045, ZEN_G = 0.055, ZEN_B = 0.130;
+const HOR_R = 0.300, HOR_G = 0.205, HOR_B = 0.400;
+const AMB_R = 0.100, AMB_G = 0.132, AMB_B = 0.225;
+const MOON_LR = 1.00, MOON_LG = 0.965, MOON_LB = 0.885;
+const GROUND_GAIN = 0.85;     // keeps the meadow down in the "grass blade" glyphs
+const MOON_COS = Math.cos(0.050);
+// tangent frame on the moon disc
+const MRl = (()=>{ const l = Math.hypot(MOONZ, MOONX) || 1; return [MOONZ/l, 0, -MOONX/l]; })();
+const MUp = [ MRl[1]*MOONZ - MRl[2]*MOONY, MRl[2]*MOONX - MRl[0]*MOONZ, MRl[0]*MOONY - MRl[1]*MOONX ];
+
+/* fast atan2(y,x) — max error ≈ 0.004 rad, no trig call */
+const AT_C1 = 0.1963, AT_C2 = -0.9817, AT_Q = Math.PI*0.25, AT_T = Math.PI*0.75;
+function fastAz(y,x){
+  const ay = (y < 0 ? -y : y) + 1e-10;
+  let r, a;
+  if (x >= 0){ r = (x - ay)/(x + ay); a = AT_C1*r*r + AT_C2*r + AT_Q; }
+  else       { r = (x + ay)/(ay - x); a = AT_C1*r*r + AT_C2*r + AT_T; }
+  return y < 0 ? -a : a;
+}
+function shadeSky(o, dx, dy, dz){
+  // base vertical gradient
+  const up = clamp(dy,0,1);
+  const g = Math.pow(up, 0.60);
+  let r = lerp(HOR_R, ZEN_R, g), gg = lerp(HOR_G, ZEN_G, g), b = lerp(HOR_B, ZEN_B, g);
+  const dot = dx*MOONX + dy*MOONY + dz*MOONZ;
+  // warm haze around the moon (rational falloff — cheaper than exp)
+  const hx1 = (1-dot)*6.5, hz = 1/(1 + hx1 + hx1*hx1*0.5);
+  r += 0.325*hz; gg += 0.185*hz; b += 0.115*hz;
+  // blush band along the horizon
+  const band = 1/(1 + (dy > 0 ? dy*8.0 : 0));
+  r += 0.085*band; gg += 0.022*band; b += 0.070*band;
+  let dep = 1e9;
+  // mountains — azimuth only, so no normalisation needed
+  {
+    let az = fastAz(dz, dx);              // [-pi,pi]
+    const af = (az < 0 ? az + TAU : az)/TAU;
+    const face = 0.45 + 0.55*Math.max(0, Math.cos(az - MOON_AZ));
+    const c1 = crestAt(Crest1, af), c2 = crestAt(Crest2, af), c3 = crestAt(Crest3, af);
+    // far ridge
+    if (dy < c1){
+      const t = clamp((c1-dy)/0.055,0,1);
+      let cr = lerp(0.052, FOG_R, 0.34), cg = lerp(0.050, FOG_G, 0.34), cb = lerp(0.108, FOG_B, 0.34);
+      const snow = smoothstep(0.10,0.17,c1)*smoothstep(0.30,0.03,t)*0.85;
+      cr = lerp(cr, 0.86*MOON_LR, snow*face); cg = lerp(cg, 0.86*MOON_LG, snow*face); cb = lerp(cb, 0.90*MOON_LB, snow*face);
+      r = lerp(cr, r, smoothstep(0.72,1.0,t)*0.35);
+      gg = lerp(cg, gg, smoothstep(0.72,1.0,t)*0.35);
+      b  = lerp(cb, b,  smoothstep(0.72,1.0,t)*0.35);
+      dep = 9000;
+    }
+    // mid ridge
+    if (dy < c2){
+      const t = clamp((c2-dy)/0.045,0,1);
+      let cr = lerp(0.034, FOG_R, 0.20), cg = lerp(0.032, FOG_G, 0.20), cb = lerp(0.078, FOG_B, 0.20);
+      const snow = smoothstep(0.075,0.14,c2)*smoothstep(0.28,0.03,t)*0.9;
+      cr = lerp(cr, 0.88*MOON_LR, snow*face); cg = lerp(cg, 0.88*MOON_LG, snow*face); cb = lerp(cb, 0.92*MOON_LB, snow*face);
+      r = lerp(cr, r, smoothstep(0.80,1.0,t)*0.30);
+      gg = lerp(cg, gg, smoothstep(0.80,1.0,t)*0.30);
+      b  = lerp(cb, b,  smoothstep(0.80,1.0,t)*0.30);
+      dep = 9000;
+    }
+    // near ridge (dark hills toward the pond)
+    if (dy < c3){
+      const t = clamp((c3-dy)/0.030,0,1);
+      let cr = lerp(0.026, FOG_R, 0.10), cg = lerp(0.030, FOG_G, 0.10), cb = lerp(0.062, FOG_B, 0.10);
+      const rim = 1/(1 + t*5.5)*0.35*(0.4+0.6*face);
+      cr += rim*MOON_LR*0.45; cg += rim*MOON_LG*0.45; cb += rim*MOON_LB*0.45;
+      r = lerp(cr, r, smoothstep(0.86,1.0,t)*0.25);
+      gg = lerp(cg, gg, smoothstep(0.86,1.0,t)*0.25);
+      b  = lerp(cb, b,  smoothstep(0.86,1.0,t)*0.25);
+      dep = 9000;
+    }
+  }
+  // the moon itself
+  if (dot > 0.93){
+    const ang = Math.acos(clamp(dot,-1,1));
+    if (ang < 0.052){
+      const rr2 = ang/0.052;
+      const u = (dx*MRl[0]+dy*MRl[1]+dz*MRl[2])/0.052;
+      const v = (dx*MUp[0]+dy*MUp[1]+dz*MUp[2])/0.052;
+      let s = fbm(u*2.6+40.0, v*2.6-17.0, 4)*0.62 + fbm(u*7.5+3.0, v*7.5+9.0, 3)*0.38;
+      let bright = 1.06 - 0.34*smoothstep(0.52,0.78,s) - 0.13*rr2*rr2;
+      bright *= 1.0 - smoothstep(0.80,1.0,rr2)*0.35;
+      r = MOON_LR*bright*1.28; gg = MOON_LG*bright*1.28; b = MOON_LB*bright*1.30;
+      dep = 8000;
+    }
+    const halo1 = (1-dot)*30, halo = 1/(1 + halo1 + halo1*halo1*0.5)*0.55;
+    r += halo*1.0; gg += halo*0.86; b += halo*0.70;
+  }
+  colR[o]=r; colG[o]=gg; colB[o]=b; depth[o]=dep; gwx[o]=0; gwz[o]=0;
+}
+
+function shadeGround(o, ox,oy,oz, dx,dy,dz, tm){
+  let t = 0.55, hit = -1, px=0,py=0,pz=0;
+  for (let s=0;s<13;s++){
+    const dt = t < 6 ? 1.3 : (t < 24 ? t*0.34 : t*0.62);
+    const nt = t + dt;
+    if (nt > 74) break;
+    px = ox+dx*nt; py = oy+dy*nt; pz = oz+dz*nt;
+    if (py <= hNear(px,pz)){
+      const fine = nt < 22 ? 7 : 4;
+      let a = t, b = nt;
+      for (let k=0;k<fine;k++){
+        const m = (a+b)*0.5, mx = ox+dx*m, my = oy+dy*m, mz = oz+dz*m;
+        if (my - hNear(mx,mz) > 0) a = m; else b = m;
+      }
+      hit = b; break;
+    }
+    t = nt;
+  }
+  if (hit < 0){                        // lost in the mist — paint pure haze
+    colR[o]=FOG_R; colG[o]=FOG_G; colB[o]=FOG_B; depth[o]=1e8; gwx[o]=0; gwz[o]=0;
+    return;
+  }
+  px = ox+dx*hit; py = oy+dy*hit; pz = oz+dz*hit;
+  const hh = hNear(px,pz);
+  const fog = smoothstep(FOG0, FOG1, hit);
+  let r,g,b;
+  if (hh < WATER && dy < -1e-4){
+    const tw = (WATER - oy)/dy;
+    if (tw > 0 && tw < hit){
+      px = ox+dx*tw; pz = oz+dz*tw; py = WATER; hit = tw;
+    }
+    const fres = 0.08 + 0.70*Math.pow(1-clamp(Math.abs(dy),0,1), 2.4);
+    r = lerp(0.020, HOR_R*1.22, fres);
+    g = lerp(0.036, HOR_G*1.25, fres);
+    b = lerp(0.082, HOR_B*1.30, fres);
+    // moon glitter path
+    const rfx = dx, rfy = -dy, rfz = dz;
+    const sd = rfx*MOONX + rfy*MOONY + rfz*MOONZ;
+    if (sd > 0.80){
+      const wav = 0.5 + 0.5*Math.sin(px*1.15 + tm*1.35)*Math.sin(pz*1.31 - tm*1.15) + 0.35*Math.sin(px*3.7 - tm*2.1)*Math.sin(pz*4.3 + tm*1.7);
+      const shim = clamp(wav,0,1);
+      const sharp = Math.pow(sd, 300)*3.1;
+      const broad = Math.pow(sd, 11)*0.30*(0.35 + 0.85*shim);
+      const gl = sharp + broad;
+      r += MOON_LR*gl; g += MOON_LG*gl*0.96; b += MOON_LB*gl*0.92;
+    }
+    r += 0.035; g += 0.018; b += 0.030;                 // blossom blush on the water
+    depth[o] = hit; gwx[o]=px; gwz[o]=pz;
+  } else {
+    const nx = bilin(Ng,px,pz,3,0), ny = bilin(Ng,px,pz,3,1), nz = bilin(Ng,px,pz,3,2);
+    const ar = bilin(Cg,px,pz,3,0), ag = bilin(Cg,px,pz,3,1), ab = bilin(Cg,px,pz,3,2);
+    const nd = Math.max(0, nx*MOONX + ny*MOONY + nz*MOONZ);
+    const diff = nd*nd;
+    const shade = 0.30 + 1.55*diff;
+    r = ar*(AMB_R*1.7 + MOON_LR*shade*2.60);
+    g = ag*(AMB_G*1.7 + MOON_LG*shade*2.50);
+    b = ab*(AMB_B*1.6 + MOON_LB*shade*2.50);
+    const sp = hash2(px*3.3+1.0, pz*3.3-2.0);           // dew sparkle
+    if (sp > 0.962){
+      const tw = (0.45+0.55*Math.sin(tm*3.4 + sp*90.0)) * (sp-0.962)/0.038;
+      r += 0.36*tw; g += 0.34*tw; b += 0.30*tw;
+    }
+    // the meadow: fine blades, broad clumps, and a slow wind running through it
+    const gn  = hash2(px*1.5+2.0, pz*1.5-7.0);
+    const gn2 = hash2(px*4.1-1.0, pz*4.1+5.0);
+    const gn3 = hash2(px*0.47+9.0, pz*0.47-3.0);
+    const wind = Math.sin(tm*0.85 + px*0.30 + pz*0.22 + gn*6.283)*0.5 + 0.5;
+    const mod = (0.80 + 0.22*gn) * (0.84 + 0.30*gn3) * (0.86 + 0.24*wind) * (0.88 + 0.22*gn2);
+    r *= mod; g *= mod*1.02; b *= mod;
+    if (gn2 > 0.955){ r += 0.075; g += 0.075; b += 0.085; }   // small pale stones
+    if (gn > 0.93){ r += 0.04; b += 0.06; }                   // fallen petals
+    depth[o]=hit; gwx[o]=px; gwz[o]=pz;
+    r *= GROUND_GAIN; g *= GROUND_GAIN; b *= GROUND_GAIN;
+    gsurf[o] = hh < WATER ? 2 : 1;
+  }
+  colR[o]=r; colG[o]=g; colB[o]=b;
+  // fog
+  colR[o] = lerp(colR[o], FOG_R, fog);
+  colG[o] = lerp(colG[o], FOG_G, fog);
+  colB[o] = lerp(colB[o], FOG_B, fog);
+}
+
+/* ------------------------------ splatting -------------------------------- */
+function splat(wx,wy,wz, cr,cg,cb, rad, alpha, fogAmt){
+  const dx = wx-camX, dy = wy-camY, dz = wz-camZ;
+  const zc = dx*F0 + dy*F1 + dz*F2;
+  if (zc < 0.35) return;
+  let f = fogAmt;
+  if (f === undefined || f < 0) f = zc > FOG0 ? smoothstep(FOG0,FOG1,zc) : 0;
+  if (f > 0.995) return;
+  if (f > 0){
+    cr = lerp(cr,FOG_R,f); cg = lerp(cg,FOG_G,f); cb = lerp(cb,FOG_B,f);
+  }
+  const inv = 1/zc;
+  const sx = cxc + (dx*R0+dy*R1+dz*R2)*inv*projX;
+  const sy = cyc - (dx*U0+dy*U1+dz*U2)*inv*projY;
+  const rc = rad + 0.55, rc2 = rc*rc;
+  if (rc <= 0.63){                                   // single cell — the common case
+    const xi = (sx + 0.5)|0, yi = (sy + 0.5)|0;
+    if (xi < 0 || yi < 0 || xi >= GW || yi >= GH) return;
+    const ddx = xi-sx, ddy = yi-sy, d2 = ddx*ddx + ddy*ddy;
+    if (d2 > rc2) return;
+    const a = alpha*(1 - d2/rc2);
+    if (a < 0.05) return;
+    const o = yi*GW+xi;
+    if (zc > depth[o]) return;
+    const ia = 1-a;
+    colR[o] = colR[o]*ia + cr*a;
+    colG[o] = colG[o]*ia + cg*a;
+    colB[o] = colB[o]*ia + cb*a;
+    depth[o] = depth[o]*ia + zc*a;
+    return;
+  }
+  let x0 = (sx-rad)|0, x1 = (sx+rad+1)|0, y0 = (sy-rad)|0, y1 = (sy+rad+1)|0;
+  if (x1 < 0 || y1 < 0 || x0 >= GW || y0 >= GH) return;
+  if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0;
+  if (x1 > GW-1) x1 = GW-1; if (y1 > GH-1) y1 = GH-1;
+  for (let y=y0;y<=y1;y++){
+    const ddy = y-sy;
+    const row = y*GW;
+    for (let x=x0;x<=x1;x++){
+      const ddx = x-sx;
+      const d2 = ddx*ddx + ddy*ddy;
+      if (d2 > rc2) continue;
+      const a = alpha*(1 - d2/rc2);
+      if (a < 0.03) continue;
+      const o = row+x;
+      if (zc > depth[o]) continue;
+      if (a > 0.985){ colR[o]=cr; colG[o]=cg; colB[o]=cb; depth[o]=zc; }
+      else {
+        const ia = 1-a;
+        colR[o] = colR[o]*ia + cr*a;
+        colG[o] = colG[o]*ia + cg*a;
+        colB[o] = colB[o]*ia + cb*a;
+        depth[o] = depth[o]*ia + zc*a;
+      }
+    }
+  }
+}
+function glow(wx,wy,wz, cr,cg,cb, rad, str, fogAmt){
+  const dx = wx-camX, dy = wy-camY, dz = wz-camZ;
+  const zc = dx*F0 + dy*F1 + dz*F2;
+  if (zc < 0.4) return;
+  let f = fogAmt;
+  if (f === undefined || f < 0) f = zc > FOG0 ? smoothstep(FOG0,FOG1,zc) : 0;
+  if (f > 0.97) return;
+  const s = str*(1-f);
+  const inv = 1/zc;
+  const sx = cxc + (dx*R0+dy*R1+dz*R2)*inv*projX;
+  const sy = cyc - (dx*U0+dy*U1+dz*U2)*inv*projY;
+  const rc = rad + 0.5, rc2 = rc*rc;
+  let x0 = (sx-rad)|0, x1 = (sx+rad+1)|0, y0 = (sy-rad)|0, y1 = (sy+rad+1)|0;
+  if (x1 < 0 || y1 < 0 || x0 >= GW || y0 >= GH) return;
+  if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0;
+  if (x1 > GW-1) x1 = GW-1; if (y1 > GH-1) y1 = GH-1;
+  for (let y=y0;y<=y1;y++){
+    const ddy = y-sy;
+    const row = y*GW;
+    for (let x=x0;x<=x1;x++){
+      const ddx = x-sx;
+      const d2 = ddx*ddx + ddy*ddy;
+      if (d2 > rc2) continue;
+      const o = row+x;
+      if (zc > depth[o]) continue;
+      const u = 1 - d2/rc2;
+      const a = s*u*u;
+      colR[o] += cr*a; colG[o] += cg*a; colB[o] += cb*a;
+    }
+  }
+}
+
+/* -------------------------------- passes --------------------------------- */
+let skyRot = 0;
+function drawStars(tm){
+  const cs = Math.cos(skyRot), sn = Math.sin(skyRot);
+  for (let i=0;i<stars.length;i++){
+    const s = stars[i];
+    const x = s.x*cs + s.z*sn, z = -s.x*sn + s.z*cs;
+    const tw = 0.62 + 0.38*Math.sin(tm*s.sp + s.ph);
+    const b = s.b*tw;
+    if (b < 0.03) continue;
+    splat(camX + x*20000, camY + s.y*20000, camZ + z*20000,
+          s.r*b, s.g*b, s.bl*b, 0, 0.92, 0);
+  }
+}
+function drawTrees(tm, px, pz){
+  for (let ti=0; ti<trees.length; ti++){
+    const tr = trees[ti];
+    const cdx = tr.x-camX, cdy = (tr.y+5)-camY, cdz = tr.z-camZ;
+    const zc = cdx*F0 + cdy*F1 + cdz*F2;
+    if (zc < -4 || zc > FOG1+18) continue;
+    const dist = Math.sqrt(cdx*cdx+cdy*cdy+cdz*cdz);
+    if (dist > FOG1+15) continue;
+    const rad = clamp(7.5/dist, 0.08, 2.2);
+    const az = Math.atan2(tr.x, tr.z);
+    const face = 0.92 + 0.46*Math.max(0, Math.cos(az - MOON_AZ));
+    const swx = Math.sin(tm*0.62 + tr.phase)*0.16, swz = Math.cos(tm*0.47 + tr.phase*1.3)*0.13;
+    const P = tr.pts;
+    // level of detail: thin the canopy out with distance
+    const stride = dist < 24 ? 7 : (dist < 46 ? 14 : 28);
+    for (let i=0;i<P.length;i+=stride){
+      const w = P[i+6];
+      const x = P[i] + swx*w, z = P[i+2] + swz*w;
+      splat(x, P[i+1], z, P[i+3]*face, P[i+4]*face, P[i+5]*face, rad, 0.86);
+    }
+    if (dist < 46) glow(tr.x + swx, tr.y+5.4, tr.z + swz, 0.62, 0.30, 0.45, 3.6, 0.055);
+  }
+}
+function drawStatics(){
+  for (let i=0;i<statics.length;i+=6){
+    const dx = statics[i]-camX, dy = statics[i+1]-camY, dz = statics[i+2]-camZ;
+    const zc = dx*F0 + dy*F1 + dz*F2;
+    if (zc < 0.35 || zc > FOG1+20) continue;
+    splat(statics[i],statics[i+1],statics[i+2], statics[i+3],statics[i+4],statics[i+5],
+          clamp(6.5/zc, 0.08, 1.6), 0.95);
+  }
+  for (let i=0;i<glows.length;i++){
+    const g = glows[i];
+    const f = 0.82 + 0.18*Math.sin(T*2.4 + i*1.7);           // lantern flicker
+    glow(g.x, g.y, g.z, g.r*f, g.g*f, g.b*f, g.rad, g.str);
+    const dz2 = g.x-camX, dz3 = g.z-camZ;
+    splat(g.x, g.y, g.z, g.r*0.95, g.g*0.72, g.b*0.5, Math.max(0.4, 6/(Math.abs(dz2)+Math.abs(dz3)+2)), 0.75);
+  }
+}
+function drawPetals(dt, tm){
+  for (let i=0;i<petals.length;i++){
+    const p = petals[i];
+    p.y -= p.sp*dt;
+    p.ph += dt*(0.6 + p.sw);
+    p.x += Math.sin(p.ph)*p.sw*dt*1.6 + dt*1.15;             // lazy drift
+    p.z += Math.cos(p.ph*0.7)*p.sw*dt*0.9 + dt*0.5;
+    const gy = hAt(p.x,p.z);
+    if (p.y < gy - 0.05 || Math.abs(p.x-playerX) > 40 || Math.abs(p.z-playerZ) > 40){
+      petals[i] = newPetal(false);
+      continue;
+    }
+    const vm = 0.55 + 0.45*Math.sin(p.ph*1.4);
+    const cr = lerp(0.80,1.00,p.tone)*vm, cg = lerp(0.44,0.62,p.tone)*vm, cb = lerp(0.56,0.74,p.tone)*vm;
+    splat(p.x, p.y, p.z, cr, cg, cb, p.size, 0.9);
+  }
+}
+function drawFlies(tm, dt){
+  for (let i=0;i<flies.length;i++){
+    const f = flies[i];
+    f.ph += dt*f.sp;
+    const sn = Math.sin(f.ph);
+    f.b = 0.35 + 0.65*(sn > 0 ? sn*sn : 0);
+    if (f.b < 0.05) continue;
+    const x = f.x + Math.sin(f.ph*0.8)*f.r, z = f.z + Math.cos(f.ph*0.63)*f.r;
+    const y = f.y + Math.sin(f.ph*1.7)*0.45;
+    glow(x,y,z, 0.95*f.b, 1.0*f.b, 0.55*f.b, 1.5, 0.42);
+  }
+}
+/* ---- figures: player, villagers, and the things in the dark -------------- */
+const FIG_ORDER = ['torso','head','hair','legL','legR','armL','armR','sword'];
+const FIG_PIV = { legL:PS_HIP, legR:PS_HIP, armL:PS_SHO, armR:PS_SHO, sword:PS_SHO };
+function figLod(dist){ return dist < 11 ? 1 : (dist < 21 ? 2 : (dist < 34 ? 3 : 4)); }
+
+function drawFigure(F, fx, fz, fy, fa, light, bob, rots, rad, rod){
+  const cs = Math.cos(fa), sn = Math.sin(fa), step = 6*rod;
+  for (let pi=0; pi<FIG_ORDER.length; pi++){
+    const name = FIG_ORDER[pi];
+    const pts = F[name];
+    if (!pts || pts.length === 0) continue;
+    const r = rots[name] || 0;
+    const pv = FIG_PIV[name] || 0;
+    const ss = Math.sin(r), sc = Math.cos(r);
+    for (let i=0;i<pts.length;i+=step){
+      let x = pts[i], y = pts[i+1]-pv, z = pts[i+2];
+      if (r !== 0){ const y2 = y*sc - z*ss; z = y*ss + z*sc; y = y2; }
+      const wx = fx + (x*cs + z*sn), wz = fz + (-x*sn + z*cs);
+      splat(wx, fy + y + pv + bob, wz, pts[i+3]*light, pts[i+4]*light, pts[i+5]*light, rad, 0.94);
+    }
+  }
+}
+/* draw a plain (pivotless) point cloud, yaw-rotated about (x,z) */
+function drawCloud(pts, x, z, y, fa, light, rad, rod){
+  const cs = Math.cos(fa), sn = Math.sin(fa), step = 6*(rod||1);
+  for (let i=0;i<pts.length;i+=step){
+    const px = pts[i], py = pts[i+1], pz = pts[i+2];
+    const wx = x + (px*cs + pz*sn), wz = z + (-px*sn + pz*cs);
+    splat(wx, y + py, wz, pts[i+3]*light, pts[i+4]*light, pts[i+5]*light, rad, 0.94);
+  }
+}
+
+function drawWanderer(tm){
+  const mv = moveAmt;
+  const bob = Math.sin(walkPhase*2)*0.05*mv*PS;
+  const swing = Math.sin(walkPhase)*0.52*mv;
+  let armR = swing*0.7;
+  if (attackT > 0){                                   // wind up, then slash through
+    const u = 1 - attackT/ATK_DUR;
+    armR = -2.05 + 3.95*Math.min(1, u*1.45);
+  }
+  const dist = Math.hypot(playerX-camX, playerY+PS_TOP-camY, playerZ-camZ);
+  const rad = clamp(2.8/dist, 0.15, 1.4);
+  const light = 0.62 + 0.55*Math.max(0, Math.cos(facing - MOON_AZ)) + 0.30;
+  drawFigure(CHAR, playerX, playerZ, playerY, facing, light, bob,
+             { legL:swing, legR:-swing, armL:-swing*0.7, armR, sword:armR },
+             rad, figLod(dist));
+  // the lantern in her left hand
+  const la = -swing*0.7;
+  const ls = Math.sin(la), lc = Math.cos(la);
+  let lx = CHAR.lamp.x, ly = CHAR.lamp.y-PS_LAMP, lz = CHAR.lamp.z;
+  const ly2 = ly*lc - lz*ls, lz2 = ly*ls + lz*lc;
+  const cs = Math.cos(facing), sn = Math.sin(facing);
+  const wx = playerX + (lx*cs + lz*sn), wz = playerZ + (-lx*sn + lz*cs);
+  const flame = 0.85 + 0.15*Math.sin(tm*3.1);
+  glow(wx, playerY + (ly2+PS_LAMP) + bob, wz, 1.0*flame, 0.70*flame, 0.34*flame, 2.7, 0.34);
+}
+function drawNpcs(tm){
+  for (let i=0;i<npcs.length;i++){
+    const n = npcs[i];
+    const dist = Math.hypot(n.x-camX, n.y+PS_TOP-camY, n.z-camZ);
+    if (dist > FOG1+14) continue;
+    const rad = clamp(2.8/dist, 0.15, 1.4);
+    // face the player when she is close
+    if (Math.hypot(n.x-playerX, n.z-playerZ) < 7)
+      n.face = angLerp(n.face, Math.atan2(playerX-n.x, playerZ-n.z), 0.06);
+    const sway = Math.sin(tm*1.05 + n.ph)*0.05;
+    const light = 0.55 + 0.50*Math.max(0, Math.cos(n.face - MOON_AZ)) + 0.30;
+    drawFigure(n.fig, n.x, n.z, n.y, n.face, light, sway,
+               { armL:sway*0.6, armR:-sway*0.6 }, rad, figLod(dist));
+  }
+}
+function drawMobs(tm){
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i];
+    if (m.dead && m.deadT <= 0) continue;
+    const K = MOBKIND[m.kind];
+    const bob = Math.sin(tm*2.1 + m.ph)*K.bob;
+    const dist = Math.hypot(m.x-camX, m.y+K.eyesY-camY, m.z-camZ);
+    if (dist > FOG1+16) continue;
+    const rad = clamp((K.radius*2.7)/dist, 0.15, 1.5);
+    const hurt = m.hurtT > 0 ? 2.0 : 1.0;
+    const fade = m.dead ? clamp(m.deadT/0.45, 0, 1) : 1;
+    const light = (0.42 + 0.42*Math.max(0, Math.cos(m.face - MOON_AZ))) * hurt * fade;
+    drawCloud(K.body, m.x, m.z, m.y + bob, m.face, light, rad, figLod(dist));
+    const g = K.glow, ey = m.y + bob + K.eyesY;
+    glow(m.x + K.eyesZoff*Math.sin(m.face), ey, m.z + K.eyesZoff*Math.cos(m.face), g[0]*fade, g[1]*fade, g[2]*fade, 1.6, 0.5*fade);
+  }
+}
+function drawShadow(){
+  const sx = playerX - MOONX*0.42, sz = playerZ - MOONZ*0.42;
+  const r2max = 1.5;
+  for (let o=0;o<NC;o++){
+    if (depth[o] > 1e8) continue;
+    const dx = gwx[o]-sx, dz = gwz[o]-sz;
+    const d2 = dx*dx+dz*dz;
+    if (d2 > r2max) continue;
+    const f = 1 - 0.62*(1 - smoothstep(0.22, 1.15, d2 <= 0 ? 0 : Math.sqrt(d2)));
+    colR[o]*=f; colG[o]*=f; colB[o]*=f;
+  }
+}
+
+/* ------------------------------ ASCII blit ------------------------------- */
+const blitLut = new Uint32Array(16);
+function blit(){
+  const CW = cellW, CH = cellH, FW = frame.width;
+  const out = f32;
+  const nR = RAMP.length-1;
+  const lut = blitLut;
+  let p = 0;
+  for (let j=0;j<GH;j++){
+    for (let i=0;i<GW;i++,p++){
+      const vg = vig[p];
+      const r = colR[p]*vg, g = colG[p]*vg, b = colB[p]*vg;
+      const lum = 0.299*r + 0.587*g + 0.114*b;
+      let idx, bgk;
+      if (gsurf[p] === 1){
+        // grass: a stable blade per spot, thicker where the moonlight falls
+        const h = hash2(gwx[p]*2.7+11, gwz[p]*2.7-5);
+        let gi = (h*3.2 + (lum < 2.2 ? lum*7.5 : 16.5))|0;
+        if (gi < 0) gi = 0; else if (gi > 9) gi = 9;
+        idx = GRASS_IDX[gi];
+        bgk = 0.06;
+      } else {
+        const l2 = Math.sqrt(lum > 0 ? (lum < 1.6 ? lum : 1.6) : 0)*0.92;
+        idx = (l2*nR + (dith[p]-0.5)*0.58)|0;
+        if (idx < 0) idx = 0; else if (idx > nR) idx = nR;
+        bgk = 0.14 + 0.42*(lum > 0.52 ? lum-0.52 : 0);
+      }
+      const m = glyphs[idx];
+      const x0 = i*CW, y0 = j*CH;
+      const br = r*bgk, bgg = g*bgk, bb = b*bgk;
+      if (!m){
+        const w = 0xff000000 | ((bb*255)|0)<<16 | ((bgg*255)|0)<<8 | ((br*255)|0);
+        for (let y=0;y<CH;y++){
+          let q = (y0+y)*FW + x0;
+          for (let x=0;x<CW;x++) out[q++] = w;
+        }
+        continue;
+      }
+      for (let k2=0;k2<16;k2++){
+        const a = k2*17;                                  // 0 … 255
+        const rr3 = br + (r-br)*a*0.00390625;
+        const gg3 = bgg + (g-bgg)*a*0.00390625;
+        const bb3 = bb + (b-bb)*a*0.00390625;
+        lut[k2] = 0xff000000 | ((bb3>1?1:bb3)*255|0)<<16 | ((gg3>1?1:gg3)*255|0)<<8 | ((rr3>1?1:rr3)*255|0);
+      }
+      for (let y=0;y<CH;y++){
+        let q = (y0+y)*FW + x0;
+        const mrow = y*CW;
+        for (let x=0;x<CW;x++,q++) out[q] = lut[m[mrow+x]>>4];
+      }
+    }
+  }
+  fctx.putImageData(fdata,0,0);
+  const cw = canvas.width, ch = canvas.height;
+  const sc = Math.min(cw/frame.width, ch/frame.height);
+  const dw = frame.width*sc, dh = frame.height*sc;
+  viewScale = sc; viewOX = (cw-dw)*0.5; viewOY = (ch-dh)*0.5;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#03040a';
+  ctx.fillRect(0,0,cw,ch);
+  ctx.drawImage(frame, (cw-dw)*0.5, (ch-dh)*0.5, dw, dh);
+}
+
+/* ==========================================================================
+   FRAME
+   ========================================================================== */
+function render(tm, dt){
+  const Y = camYaw, P = camPitch;
+  const sY = Math.sin(Y), cY = Math.cos(Y), sP = Math.sin(P), cP = Math.cos(P);
+  F0 = -sY*cP; F1 = -sP; F2 = -cY*cP;
+  R0 =  cY;    R1 =  0;  R2 = -sY;
+  U0 = -sY*sP; U1 =  cP; U2 = -cY*sP;
+
+  // --- sky & landscape -----------------------------------------------------
+  if (MGFLAG.world){
+  for (let o=0;o<NC;o++){
+    const cdx = rayX[o], cdy = rayY[o], cdz = rayZ[o];
+    const dx = R0*cdx + U0*cdy + F0*cdz;
+    const dy = R1*cdx + U1*cdy + F1*cdz;
+    const dz = R2*cdx + U2*cdy + F2*cdz;
+    gsurf[o] = 0;
+    if (dy < -0.005) shadeGround(o, camX, camY, camZ, dx, dy, dz, tm);
+    else             shadeSky(o, dx, dy, dz);
+  }
+  }
+  // --- everything that lives in the glade ----------------------------------
+  if (MGFLAG.rings)   drawRings();
+  if (MGFLAG.stars)   drawStars(tm);
+  if (MGFLAG.trees)   drawTrees(tm, playerX, playerZ);
+  if (MGFLAG.statics) drawStatics();
+  if (MGFLAG.mobs)    drawMobs(tm);
+  if (MGFLAG.npcs)    drawNpcs(tm);
+  if (MGFLAG.flies)   drawFlies(tm, dt);
+  if (MGFLAG.petals)  drawPetals(dt, tm);
+  if (MGFLAG.char)    drawWanderer(tm);
+  if (MGFLAG.embers)  drawEmbers();
+  if (MGFLAG.shadow)  drawShadow();
+  if (MGFLAG.blit){ blit(); drawLabels(); }
+}
+const MGFLAG = { world:true, stars:true, trees:true, statics:true, mobs:true, npcs:true,
+                 flies:true, petals:true, char:true, embers:true, rings:true, shadow:true, blit:true };
+
+/* ==========================================================================
+   THE WALKER
+   ========================================================================== */
+const keys = Object.create(null);
+let camYaw = 2.32, camPitch = 0.40, camDist = 4.9;
+let facing = -0.82, walkPhase = 0, moveAmt = 0, idleT = 0, lookIdle = 0;
+let bobT = 0;
+function angLerp(a,b,t){
+  let d = (b - a) % TAU;
+  if (d >  Math.PI) d -= TAU;
+  if (d < -Math.PI) d += TAU;
+  return a + d*t;
+}
+function tryMove(nx, nz){
+  const h = hAt(nx, nz);
+  if (h < WATER - 0.30) return false;
+  if (Math.hypot(nx,nz) > 104) return false;
+  return true;
+}
+function update(dt, tm){
+  if (playerDownT > 0) playerDownT -= dt;
+  if (hurtFlash > 0) hurtFlash -= dt;
+  if (invulnT > 0) invulnT -= dt;
+  if (attackT > 0) attackT -= dt;
+  if (attackCD > 0) attackCD -= dt;
+
+  const locked = dlg.open || playerDownT > 0;
+
+  // ---- walk -------------------------------------------------------------
+  let ix = 0, iz = 0;
+  if (!locked){
+    if (keys['w'] || keys['arrowup'])    iz += 1;
+    if (keys['s'] || keys['arrowdown'])  iz -= 1;
+    if (keys['d'] || keys['arrowright']) ix += 1;
+    if (keys['a'] || keys['arrowleft'])  ix -= 1;
+  }
+  const run = !!(keys['shift']);
+  const fy = -Math.sin(camYaw), fz = -Math.cos(camYaw);
+  const ry =  Math.cos(camYaw), rz = -Math.sin(camYaw);
+  let dx = fy*iz + ry*ix, dz = fz*iz + rz*ix;
+  const dl = Math.hypot(dx,dz);
+  if (dl > 1e-4){
+    dx /= dl; dz /= dl;
+    const spd = run ? 7.4 : 3.3;
+    const step = spd*dt;
+    const nx = playerX + dx*step, nz = playerZ + dz*step;
+    if (tryMove(nx,nz)){ playerX = nx; playerZ = nz; }
+    else if (tryMove(playerX + dx*step, playerZ)) playerX += dx*step;      // slide
+    else if (tryMove(playerX, playerZ + dz*step)) playerZ += dz*step;
+    facing = angLerp(facing, Math.atan2(dx,dz), 1 - Math.exp(-dt*10));
+    // the view settles in behind her, so the camera is always "locked" on her
+    camYaw = angLerp(camYaw, facing + Math.PI, 1 - Math.exp(-dt*1.7));
+    moveAmt += (1 - moveAmt)*(1 - Math.exp(-dt*6));
+    walkPhase += dt*spd*2.0*(run?0.92:1.0);
+    idleT = 0; lookIdle = 0;
+  } else {
+    moveAmt += (0 - moveAmt)*(1 - Math.exp(-dt*5));
+    walkPhase += dt*0.6*moveAmt;
+    idleT += dt;
+    if (idleT > 5){
+      lookIdle = Math.min(1, lookIdle + dt*0.35);
+      camYaw += dt*0.035*lookIdle;
+    }
+  }
+
+  // ---- the sword --------------------------------------------------------
+  if (!locked && attackCD <= 0 && attackT <= 0 && (keys[' '] || keys['j'])){
+    attackT = ATK_DUR; attackCD = 0.46; swingHit = false;
+  }
+  if (attackT > 0 && !swingHit && 1 - attackT/ATK_DUR > 0.14){
+    swingHit = true; doSwing();
+    rings.push({ x:playerX, z:playerZ, t:0, dur:0.42, r0:0.5, r1:2.5 });
+  }
+
+  // ---- the folk and the dark things -------------------------------------
+  if (!locked) updateMobs(dt, tm);
+  updateFx(dt);
+
+  nearNpc = null;
+  if (!locked){
+    let best = 3.4;
+    for (let i=0;i<npcs.length;i++){
+      const n = npcs[i], d = Math.hypot(n.x-playerX, n.z-playerZ);
+      if (d < best){ best = d; nearNpc = n; }
+    }
+  }
+
+  gameT = tm;
+  playerY += (hAt(playerX, playerZ) - playerY)*(1 - Math.exp(-dt*11));
+  bobT += dt;
+
+  // ---- third person rig -------------------------------------------------
+  const tx = playerX, ty = playerY + 1.02, tz = playerZ;
+  const ox = Math.sin(camYaw)*Math.cos(camPitch),
+        oy = Math.sin(camPitch),
+        oz = Math.cos(camYaw)*Math.cos(camPitch);
+  let d = camDist;
+  for (let k=0;k<10;k++){
+    const px = tx + ox*d, py = ty + oy*d, pz = tz + oz*d;
+    if (py > hAt(px,pz) + 0.95) break;
+    d -= camDist/10;
+    if (d < 2.0){ d = 2.0; break; }
+  }
+  let px = tx + ox*d, py = ty + oy*d, pz = tz + oz*d;
+  const hh = hAt(px,pz) + 0.75;
+  if (py < hh) py = hh;
+  // gentle spring so the walk feels unhurried
+  if (!camInit){ camX = px; camY = py; camZ = pz; camInit = true; }
+  const k2 = 1 - Math.exp(-dt*9);
+  camX += (px - camX)*k2;
+  camY += (py - camY)*k2;
+  camZ += (pz - camZ)*k2;
+}
+let camInit = false, gameT = 0;
+
+/* ==========================================================================
+   THE GROVE'S BUSINESS — sword, folk, and the things in the dark
+   ========================================================================== */
+const ATK_DUR = 0.40;                       // length of a sword swing
+let attackT = 0, attackCD = 0, swingHit = false;
+let playerHP = 6; const playerMaxHP = 6;
+let invulnT = 0, playerDownT = 0, hurtFlash = 0;
+let nearNpc = null;
+const impacts = [], embers = [], rings = [], floaters = [];
+const dlg = { open:false, who:'', lines:[], i:0 };
+const quest = { need:5, kills:0, done:false, given:false };
+
+const TALK = {
+  'ELDER MIKO': [
+    'The grove keeps its own hours, little one.',
+    'Something has been eating the light between the trees — wisps, and worse.',
+    'Take your blade. Still the restless ones, five will do, and the path home opens.'
+  ],
+  'LANTERN KEEPER': [
+    'Mind the wisps. They come for a warm hand.',
+    'Swing when they drift in, then step back. Never trade blows.',
+    'Five of them, and the lanterns burn steady again.'
+  ],
+  'LOST TRAVELER': [
+    'I walked in at dusk and the path folded up behind me.',
+    'Clear the dark things and I will follow your light out.',
+    'Thank you. Truly.'
+  ]
+};
+
+function openTalk(n){
+  dlg.open = true; dlg.who = n.name; dlg.lines = TALK[n.name] || ['...']; dlg.i = 0;
+  quest.given = true;
+  dlgEl.classList.add('show'); renderDlg();
+}
+function renderDlg(){
+  dlgEl.innerHTML = '<span class="who">' + dlg.who + '</span>' + dlg.lines[dlg.i] +
+                    '<span class="more">' + (dlg.i < dlg.lines.length - 1 ? 'space · more' : 'space · close') + '</span>';
+}
+function closeTalk(){ dlg.open = false; dlgEl.classList.remove('show'); }
+function advanceTalk(){
+  if (!dlg.open) return;
+  dlg.i++;
+  if (dlg.i >= dlg.lines.length) closeTalk(); else renderDlg();
+}
+function tryTalk(){ if (nearNpc && playerDownT <= 0) openTalk(nearNpc); }
+
+/* ---- the sword ---------------------------------------------------------- */
+function floatText(x, y, z, txt, col){
+  floaters.push({ x, y, z, txt, col, t:0, dur:0.95, vy:1.25 });
+}
+function spawnImpact(x, y, z, r, g, b, rad, n){
+  impacts.push({ x, y, z, r, g, b, t:0, dur:0.5, rad });
+  for (let i=0;i<n;i++){
+    const a = SITE()*TAU, s = 0.6 + SITE()*1.2;
+    embers.push({ x, y, z, vx:Math.cos(a)*s, vy:0.8 + SITE()*1.7, vz:Math.sin(a)*s,
+                  t:0, dur:0.6 + SITE()*0.9, r, g, b });
+  }
+}
+function doSwing(){
+  const reach = 2.15, arc = Math.cos(1.05);
+  const fx = Math.sin(facing), fz = Math.cos(facing);
+  let hitAny = false;
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i];
+    if (m.dead) continue;
+    const K = MOBKIND[m.kind];
+    const dx = m.x - playerX, dz = m.z - playerZ;
+    const d = Math.hypot(dx, dz);
+    if (d > reach + K.radius) continue;
+    if (d > 0.001 && (dx/d*fx + dz/d*fz) < arc) continue;
+    hitAny = true;
+    m.hp -= 1; m.hurtT = 0.30;
+    if (m.hp <= 0){
+      m.dead = true; m.deadT = 0.75; quest.kills++;
+      spawnImpact(m.x, m.y + 0.5, m.z, 1.0, 0.52, 0.26, 1.6, 18);
+      floatText(m.x, m.y + 1.25, m.z, '1', '#ffd0a0');
+      if (quest.kills >= quest.need && !quest.done){
+        quest.done = true; flash('the grove is still · the path opens');
+      }
+    } else {
+      spawnImpact(m.x, m.y + 0.5, m.z, 1.0, 0.68, 0.40, 0.95, 10);
+      floatText(m.x, m.y + 1.15, m.z, '1', '#ffe0b0');
+    }
+  }
+  if (!hitAny) spawnImpact(playerX + fx*1.5, playerY + 0.7, playerZ + fz*1.5, 0.60, 0.66, 0.74, 0.5, 5);
+}
+function playerDown(){
+  playerHP = playerMaxHP; invulnT = 2.4; playerDownT = 0.9; hurtFlash = 1.0;
+  playerX = 2; playerZ = -2; playerY = hAt(playerX, playerZ);
+  camInit = false; camYaw = 2.32; facing = camYaw - Math.PI;
+  flash('you wake beneath the torii');
+}
+/* ---- the dark things ---------------------------------------------------- */
+function updateMobs(dt, tm){
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i], K = MOBKIND[m.kind];
+    if (m.hurtT > 0) m.hurtT -= dt;
+    if (m.dead){ if (m.deadT > 0) m.deadT -= dt; continue; }
+    if (m.atkCD > 0) m.atkCD -= dt;
+    const dx = playerX - m.x, dz = playerZ - m.z;
+    const d = Math.hypot(dx, dz);
+    m.aggro = d < K.aggro && playerDownT <= 0 && !dlg.open;
+    let tx = m.x, tz = m.z;
+    if (m.aggro){
+      m.face = angLerp(m.face, Math.atan2(dx, dz), 1 - Math.exp(-dt*5));
+      const want = K.atkR*0.80;
+      if (d > want){
+        const di = d > 1e-4 ? 1/d : 0;
+        tx = m.x + dx*di*K.spd*dt; tz = m.z + dz*di*K.spd*dt;
+      } else if (m.atkCD <= 0 && invulnT <= 0){
+        m.atkCD = 1.65; playerHP -= K.dmg; invulnT = 1.1; hurtFlash = 0.7;
+        spawnImpact(playerX, playerY + 0.9, playerZ, 1.0, 0.22, 0.28, 1.1, 8);
+        floatText(playerX, playerY + 1.5, playerZ, '-' + K.dmg, '#ff8a9a');
+        if (playerHP <= 0) playerDown();
+      }
+    } else {
+      m.wanderT -= dt;
+      if (m.wanderT <= 0){ m.wanderT = 2.6 + SITE()*3.4; const a = SITE()*TAU; m.wx = Math.cos(a); m.wz = Math.sin(a); }
+      tx = m.x + m.wx*0.5*dt; tz = m.z + m.wz*0.5*dt;
+      m.face = angLerp(m.face, Math.atan2(m.wx, m.wz), 1 - Math.exp(-dt*1.6));
+    }
+    const ny = hAt(tx, tz);
+    if (ny > 0.75 || K.hover > 0){ m.x = tx; m.z = tz; } else m.wanderT = 0;
+    m.y = hAt(m.x, m.z) + K.hover;
+  }
+}
+function updateFx(dt){
+  for (let i=impacts.length-1;i>=0;i--){ const p = impacts[i]; p.t += dt; if (p.t >= p.dur) impacts.splice(i,1); }
+  for (let i=embers.length-1;i>=0;i--){
+    const e = embers[i]; e.t += dt;
+    if (e.t >= e.dur){ embers.splice(i,1); continue; }
+    e.vy -= 3.4*dt; e.x += e.vx*dt; e.y += e.vy*dt; e.z += e.vz*dt;
+  }
+  for (let i=rings.length-1;i>=0;i--){ rings[i].t += dt; if (rings[i].t >= rings[i].dur) rings.splice(i,1); }
+  for (let i=floaters.length-1;i>=0;i--){
+    const f = floaters[i]; f.t += dt; f.y += f.vy*dt; f.vy *= (1 - 1.6*dt);
+    if (f.t >= f.dur) floaters.splice(i,1);
+  }
+}
+function drawEmbers(){
+  for (let i=0;i<embers.length;i++){
+    const e = embers[i], f = 1 - e.t/e.dur;
+    splat(e.x, e.y, e.z, e.r*f, e.g*f, e.b*f, 0.30, 0.92*f);
+  }
+  for (let i=0;i<impacts.length;i++){
+    const p = impacts[i], u = p.t/p.dur, s = Math.sin(u*Math.PI);
+    glow(p.x, p.y, p.z, p.r, p.g, p.b, p.rad*(0.35 + u*1.5), 0.95*s);
+  }
+}
+function drawRings(){
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i];
+    if (m.dead || !m.aggro) continue;
+    const K = MOBKIND[m.kind];
+    const n = 34, rr2 = K.atkR*0.92;
+    for (let k=0;k<n;k++){
+      const a = k/n*TAU;
+      const x = m.x + Math.cos(a)*rr2, z = m.z + Math.sin(a)*rr2;
+      splat(x, hAt(x,z) + 0.07, z, 1.0, 0.28, 0.32, 0.32, 0.55);
+    }
+  }
+  for (let i=0;i<rings.length;i++){
+    const r = rings[i], u = r.t/r.dur, rr2 = r.r0 + (r.r1-r.r0)*u;
+    const n = 30;
+    for (let k=0;k<n;k++){
+      const a = k/n*TAU;
+      const x = r.x + Math.cos(a)*rr2, z = r.z + Math.sin(a)*rr2;
+      splat(x, hAt(x,z) + 0.08, z, 1.0, 0.62, 0.30, 0.30, 0.7*(1-u));
+    }
+  }
+}
+/* ---- world-space name plates, straight onto the canvas ------------------ */
+let viewScale = 1, viewOX = 0, viewOY = 0;
+function project(wx, wy, wz){
+  const dx = wx-camX, dy = wy-camY, dz = wz-camZ;
+  const zc = dx*F0 + dy*F1 + dz*F2;
+  if (zc < 0.35 || zc > FOG1 + 22) return null;
+  const inv = 1/zc;
+  return { x: viewOX + (cxc + (dx*R0+dy*R1+dz*R2)*inv*projX)*cellW*viewScale,
+           y: viewOY + (cyc - (dx*U0+dy*U1+dz*U2)*inv*projY)*cellH*viewScale,
+           zc };
+}
+function drawLabels(){
+  const cw = canvas.width, chh = canvas.height, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const list = [];
+  list.push({ x:playerX, y:playerY + PS_TOP + 0.46, z:playerZ, n:'MOONWALKER',
+              col:'#ffd9e6', hp:playerHP, max:playerMaxHP, bar:'#ff6f8b', me:true });
+  for (let i=0;i<npcs.length;i++){
+    const n = npcs[i];
+    if (Math.hypot(n.x-playerX, n.z-playerZ) > 30) continue;
+    list.push({ x:n.x, y:n.y + PS_TOP + 0.36, z:n.z, n:n.name, col:'#cfe2ff', bar:'#8fb8ff' });
+  }
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i];
+    if (m.dead) continue;
+    const K = MOBKIND[m.kind];
+    if (Math.hypot(m.x-playerX, m.z-playerZ) > 36) continue;
+    list.push({ x:m.x, y:m.y + K.eyesY + 0.72, z:m.z, n:(m.kind==='brute'?'GROVE BRUTE':'WISP'),
+                col:'#ffb9a0', hp:m.hp, max:m.maxHp, bar:'#ff6a5a' });
+  }
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  for (let i=0;i<list.length;i++){
+    const it = list[i];
+    const s = project(it.x, it.y, it.z);
+    if (!s) continue;
+    if (s.x < -120 || s.x > cw+120 || s.y < -20 || s.y > chh+20) continue;
+    const fs = Math.round(11.5*dpr);
+    ctx.font = fs + 'px ui-monospace, Consolas, "Courier New", monospace';
+    ctx.shadowColor = 'rgba(0,0,0,.92)'; ctx.shadowBlur = 5;
+    ctx.fillStyle = it.me ? it.col : it.col;
+    ctx.fillText(it.n, s.x, s.y);
+    if (it.hp !== undefined){
+      const w = Math.round(52*dpr), h = Math.round(4*dpr);
+      const bx = s.x - w*0.5, by = s.y + Math.round(4*dpr);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(bx-1, by-1, w+2, h+2);
+      ctx.fillStyle = it.bar;
+      ctx.fillRect(bx, by, w*clamp(it.hp/it.max, 0, 1), h);
+    }
+  }
+  // floating combat numbers
+  for (let i=0;i<floaters.length;i++){
+    const f = floaters[i];
+    const s = project(f.x, f.y, f.z);
+    if (!s) continue;
+    const k = 1 - f.t/f.dur;
+    ctx.globalAlpha = clamp(k*1.6, 0, 1);
+    ctx.font = Math.round(14*dpr) + 'px ui-monospace, Consolas, monospace';
+    ctx.shadowColor = 'rgba(0,0,0,.95)'; ctx.shadowBlur = 5;
+    ctx.fillStyle = f.col;
+    ctx.fillText(f.txt, s.x, s.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/* ==========================================================================
+   SOUND — a slow, breathy night ambience
+   ========================================================================== */
+let AC = null, master = null, muted = false, pluckTimer = null;
+const PENTA = [146.83,164.81,196.00,220.00,246.94,293.66,329.63,392.00,440.00,493.88,587.33,659.25];
+function initAudio(){
+  if (AC) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  try { AC = new Ctx(); } catch(e){ return; }
+  master = AC.createGain();
+  master.gain.value = 0.0001;
+  master.connect(AC.destination);
+  master.gain.linearRampToValueAtTime(muted ? 0.0001 : 0.40, AC.currentTime + 5);
+
+  // ---- simple feedback reverb — short, soft tail; only the plucks feed it ----
+  const send = AC.createGain(); send.gain.value = 1;
+  const sendHp = AC.createBiquadFilter(); sendHp.type = 'highpass'; sendHp.frequency.value = 240;
+  send.connect(sendHp);
+  const dl1 = AC.createDelay(1.0); dl1.delayTime.value = 0.29;
+  const dl2 = AC.createDelay(1.0); dl2.delayTime.value = 0.44;
+  const damp = AC.createBiquadFilter(); damp.type = 'lowpass'; damp.frequency.value = 1250;
+  const fb = AC.createGain(); fb.gain.value = 0.19;
+  sendHp.connect(dl1); sendHp.connect(dl2);
+  dl1.connect(damp); dl2.connect(damp);
+  damp.connect(fb); fb.connect(dl1); fb.connect(dl2);
+  const verbOut = AC.createGain(); verbOut.gain.value = 0.24;
+  damp.connect(verbOut); verbOut.connect(master);
+  function pluck(f, when, dur, amp){
+    const o = AC.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = f*2.005;
+    const g = AC.createGain(), g2 = AC.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(amp, when + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    g2.gain.setValueAtTime(0.0001, when);
+    g2.gain.exponentialRampToValueAtTime(amp*0.22, when + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, when + dur*0.3);
+    o.connect(g); o2.connect(g2);
+    g.connect(master); g.connect(send); g2.connect(send);
+    o.start(when); o2.start(when);
+    o.stop(when + dur + 0.1); o2.stop(when + dur*0.4);
+  }
+  // ---- pad (dry — continuous tones must not feed the reverb) ----
+  const padGain = AC.createGain(); padGain.gain.value = 0.05;
+  padGain.connect(master);
+  [73.42,110.00,146.83,220.00,293.66].forEach((f,i)=>{
+    const o = AC.createOscillator();
+    o.type = i % 2 ? 'triangle' : 'sine';
+    o.frequency.value = f*(i%2 ? 1.0016 : 1.0);
+    const g = AC.createGain(); g.gain.value = 0.55/(i+1);
+    o.connect(g); g.connect(padGain);
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.021 + i*0.013;
+    const lg = AC.createGain(); lg.gain.value = 3.2;
+    lfo.connect(lg); lg.connect(o.detune);
+    o.start(); lfo.start();
+  });
+  // ---- wind ----
+  const len = AC.sampleRate*4;
+  const buf = AC.createBuffer(1, len, AC.sampleRate);
+  const ch = buf.getChannelData(0);
+  let lw = 0;
+  for (let i=0;i<len;i++){ const w = Math.random()*2-1; lw = lw*0.985 + w*0.015; ch[i] = lw*3.0; }
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 380; bp.Q.value = 0.7;
+  const wg = AC.createGain(); wg.gain.value = 0.035;
+  const wl = AC.createOscillator(); wl.frequency.value = 0.032;
+  const wlg = AC.createGain(); wlg.gain.value = 170;
+  wl.connect(wlg); wlg.connect(bp.frequency);
+  src.connect(bp); bp.connect(wg); wg.connect(master);        // dry — no reverb
+  src.start(); wl.start();
+  // ---- drifting chimes ----
+  const chime = () => {
+    if (!AC) return;
+    if (!muted && AC.state === 'running'){
+      const n = 1 + (Math.random() < 0.34 ? 1 : 0);
+      for (let i=0;i<n;i++){
+        const f = PENTA[(Math.random()*PENTA.length)|0];
+        pluck(f, AC.currentTime + i*0.42, 2.8 + Math.random()*2.8, 0.038 + Math.random()*0.04);
+      }
+    }
+    pluckTimer = setTimeout(chime, 2600 + Math.random()*6200);
+  };
+  chime();
+}
+function toggleMute(){
+  muted = !muted;
+  if (master && AC){
+    master.gain.cancelScheduledValues(AC.currentTime);
+    master.gain.setValueAtTime(master.gain.value, AC.currentTime);
+    master.gain.linearRampToValueAtTime(muted ? 0.0001 : 0.40, AC.currentTime + 1.2);
+  }
+}
+
+/* ==========================================================================
+   INPUT / HUD / LOOP
+   ========================================================================== */
+const hud = document.getElementById('hud');
+const hint = document.getElementById('hint');
+const startEl = document.getElementById('start');
+const titleEl = document.getElementById('title');
+const statusEl = document.getElementById('status');
+const dlgEl = document.getElementById('dlg');
+const promptEl = document.getElementById('prompt');
+const flashEl = document.getElementById('flash');
+const bossEl = document.getElementById('boss');
+let hudOn = true, started = false, frameMs = 16;
+let presetCap = PRESETS.length - 1;   // highest tier auto-quality may climb to
+let autoQ = true;                     // automatic quality on/off
+let flashMsg = '', flashT = 0;
+
+const autoEl = document.getElementById('auto');
+function setAuto(v){
+  autoQ = v;
+  autoEl.classList.toggle('on', v);
+  autoEl.querySelector('.dot').textContent = v ? '●' : '○';
+  autoEl.title = v ? 'automatic quality: on (click to lock)' : 'automatic quality: off (click to resume)';
+  if (v) presetCap = Math.max(presetCap, preset);
+  flash(v ? 'auto quality · on' : 'auto quality · off · locked at ' + PRESETS[preset].name);
+  if (typeof updateHud === 'function') updateHud();
+}
+autoEl.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); setAuto(!autoQ); });
+autoEl.addEventListener('mousedown', e=>{ e.stopPropagation(); });
+
+function flash(m){ flashMsg = m; flashT = 3; }
+function bars(v, max, n){
+  const k = Math.round(clamp(v/max, 0, 1)*n);
+  let s = '';
+  for (let i=0;i<n;i++) s += (i < k ? '█' : '░');
+  return s;
+}
+function updateHud(){
+  if (!hudOn){ hud.style.display = 'none'; statusEl.style.display = 'none'; return; }
+  hud.style.display = 'block';
+  statusEl.style.display = 'block';
+  statusEl.innerHTML =
+    '<div class="pf">' +
+      '<div class="pn">MOONWALKER</div>' +
+      '<div class="pl">HP <b class="hb">' + bars(playerHP, playerMaxHP, 10) + '</b> ' +
+        Math.max(0, playerHP) + '/' + playerMaxHP + '</div>' +
+      '<div class="pl">MP <b class="mb">' + bars(quest.done ? 1 : 0.62, 1, 10) + '</b> ' +
+        (quest.done ? 120 : 74) + '/120</div>' +
+    '</div>' +
+    '<div class="q"><span class="lab">' + (quest.done ? 'QUEST COMPLETE' : 'QUEST · THE LIGHT THIEVES') + '</span>' +
+      (quest.done ? 'the grove is still — speak with the elder'
+                  : 'still the restless ones &nbsp;<b>' + Math.min(quest.kills, quest.need) + '/' + quest.need + '</b>') +
+    '</div>';
+  hud.innerHTML =
+    'fps <b>' + fps.toFixed(0) + '</b> · frame <b>' + frameMs.toFixed(1) + ' ms</b><br>' +
+    'grid <b>' + GW + '×' + GH + '</b> · <b>' + PRESETS[preset].name + ' ' + (preset+1) + '/' + PRESETS.length + '</b>' +
+    (flashT > 0 ? '<br><b>' + flashMsg + '</b>' : '');
+}
+function updateOverlays(){
+  if (nearNpc && !dlg.open && playerDownT <= 0){
+    promptEl.innerHTML = '<b>E</b> &nbsp;speak with ' + nearNpc.name;
+    promptEl.classList.add('show');
+  } else promptEl.classList.remove('show');
+  flashEl.classList.toggle('hit', hurtFlash > 0);
+  // boss bar — the nearest angry brute
+  let boss = null;
+  for (let i=0;i<mobs.length;i++){
+    const m = mobs[i];
+    if (m.dead || !m.aggro || m.kind !== 'brute') continue;
+    if (!boss || Math.hypot(m.x-playerX, m.z-playerZ) < Math.hypot(boss.x-playerX, boss.z-playerZ)) boss = m;
+  }
+  if (boss){
+    bossEl.classList.add('show');
+    bossEl.innerHTML = '<div class="bn">GROVE BRUTE</div><div class="bb"><div class="bf" style="width:' +
+      Math.round(clamp(boss.hp/boss.maxHp, 0, 1)*100) + '%"></div></div>';
+  } else bossEl.classList.remove('show');
+}
+function begin(){
+  if (started) return;
+  started = true;
+  initAudio();
+  if (AC && AC.state === 'suspended') AC.resume();
+  startEl.style.opacity = '0';
+  setTimeout(()=>{ startEl.style.display = 'none'; }, 950);
+  titleEl.style.opacity = '1';
+  setTimeout(()=>{ titleEl.style.opacity = '0'; }, 9000);
+  if (canvas.requestPointerLock){
+    try { const pr = canvas.requestPointerLock(); if (pr && pr.catch) pr.catch(()=>{}); } catch(e){}
+  }
+}
+startEl.addEventListener('click', begin);
+window.addEventListener('keydown', e=>{
+  if (!started && (e.key === ' ' || e.key === 'Enter')){ begin(); return; }
+  const k = e.key.toLowerCase();
+  if (dlg.open){                                    // dialogue swallows the keys
+    if (!e.repeat && (k === ' ' || k === 'enter' || k === 'e' || k === 'j')) advanceTalk();
+    e.preventDefault(); return;
+  }
+  if (k === 'shift') keys['shift'] = true; else keys[k] = true;
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].indexOf(k) >= 0) e.preventDefault();
+  if (e.repeat) return;
+  if (k === 'm') toggleMute();
+  if (k === 'o') setAuto(!autoQ);
+  if (k === 'h'){ hudOn = !hudOn; updateHud(); }
+  if (k === 'e') tryTalk();
+  if (k >= '1' && k <= '9' && k.length === 1){
+    const p = +k - 1;
+    if (p >= 0 && p < PRESETS.length){
+      preset = p; presetCap = preset; resize(); camInit = false;
+      flash('quality → ' + PRESETS[preset].name + ' (' + (preset+1) + '/' + PRESETS.length + ')');
+    }
+  }
+});
+window.addEventListener('keyup', e=>{
+  const k = e.key.toLowerCase();
+  if (k === 'shift') keys['shift'] = false; else keys[k] = false;
+});
+window.addEventListener('blur', ()=>{ for (const k in keys) keys[k] = false; });
+canvas.addEventListener('click', ()=>{
+  if (started && canvas.requestPointerLock){
+    try { const pr = canvas.requestPointerLock(); if (pr && pr.catch) pr.catch(()=>{}); } catch(e){}
+  }
+});
+document.addEventListener('mousemove', e=>{
+  if (!started) return;
+  const locked = document.pointerLockElement === canvas;
+  if (!locked && !dragging) return;
+  camYaw   -= e.movementX*0.0024;
+  camPitch  = clamp(camPitch + e.movementY*0.0017, 0.06, 1.15);
+  idleT = 0; lookIdle = 0;
+});
+let dragging = false, lastMX = 0, lastMY = 0;
+canvas.addEventListener('mousedown', e=>{ dragging = true; });
+window.addEventListener('mouseup', ()=>{ dragging = false; });
+window.addEventListener('resize', ()=>{ resize(); camInit = false; });
+document.addEventListener('visibilitychange', ()=>{ last = performance.now(); });
+
+let fps = 60, fAcc = 0, fCnt = 0, slowN = 0, fastN = 0, last = performance.now(), T = 0;
+function autoQuality(){
+  if (!autoQ) return;
+  if (fps < 27) slowN++; else slowN = Math.max(0, slowN - 1);
+  if (fps > 56) fastN++; else fastN = 0;
+  if (slowN > 4 && preset > 0){
+    preset--; slowN = 0; presetCap = preset; resize(); camInit = false;
+    flash('auto · quality → ' + PRESETS[preset].name + ' (' + (preset+1) + '/' + PRESETS.length + ')');
+  } else if (fastN > 24 && preset < presetCap){
+    preset++; fastN = 0; resize(); camInit = false;
+  }
+}
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.06, (now - last)/1000);
+  last = now; T += dt;
+  if (flashT > 0) flashT -= dt;
+  update(dt, T);
+  render(T, dt);
+  updateOverlays();
+  frameMs += (dt*1000 - frameMs)*0.15;
+  fAcc += dt; fCnt++;
+  if (fAcc > 0.5){
+    fps = fCnt/fAcc; fAcc = 0; fCnt = 0;
+    updateHud();
+    autoQuality();
+  }
+}
+
+/* ==========================================================================
+   BOOT
+   ========================================================================== */
+bakeWorld();
+bakeSkyline();
+buildForest();
+buildShrine();
+buildStars();
+buildWeather();
+buildNpcs();
+spawnMobs();
+resize();
+playerY = hAt(playerX, playerZ);
+camYaw = 2.32;
+facing = camYaw - Math.PI;
+updateHud();
+window.__MG = {
+  info(){ return { GW, GH, cellW, cellH, NC, arrLen: colR.length, dlen: depth.length, frame: frame.width+'x'+frame.height,
+                   camX, camY, camZ, playerX, playerY, playerZ,
+                   trees: trees.length, statics: statics.length/6, preset, fps }; },
+  probe(i){ return { r:colR[i], g:colG[i], b:colB[i], d:depth[i], gwx:gwx[i], gwz:gwz[i] }; },
+  probeCell(x,y){ return this.probe(y*GW+x); },
+  ray(x,y){ const o=y*GW+x; return { rx:rayX[o], ry:rayY[o], rz:rayZ[o] }; },
+  ground(x,y){ const o=y*GW+x; const dx=R0*rayX[o]+U0*rayY[o]+F0*rayZ[o],
+    dy=R1*rayX[o]+U1*rayY[o]+F1*rayZ[o], dz=R2*rayX[o]+U2*rayY[o]+F2*rayZ[o];
+    shadeGround(o, camX, camY, camZ, dx, dy, dz, T); return { r:colR[o], g:colG[o], b:colB[o], d:depth[o], dy }; },
+  hAt: (x,z)=>hAt(x,z), terrainY: (x,z)=>terrainY(x,z),
+  warp(x,z,face){ playerX = x; playerZ = z; playerY = hAt(x,z); camInit = false;
+                  if (face !== undefined) { facing = face; camYaw = face + Math.PI; }
+                  return { playerX, playerY, playerZ, facing }; },
+  mobs(){ return mobs.map(m => ({ kind:m.kind, x:+m.x.toFixed(2), z:+m.z.toFixed(2), hp:m.hp, dead:m.dead, aggro:m.aggro })); },
+  npcList(){ return npcs.map(n => ({ name:n.name, x:+n.x.toFixed(2), z:+n.z.toFixed(2) })); },
+  quest(){ return { kills:quest.kills, need:quest.need, done:quest.done, hp:playerHP }; },
+  tick(){ try { update(1/60, T); return 'ok'; } catch(e){ return 'ERR ' + e.message; } },
+  step(n){ for (let i=0;i<(n||1);i++){ T += 1/60; update(1/60, T); render(T, 1/60); } return 'stepped'; },
+  bench(n){ const t0 = performance.now(); for (let i=0;i<(n||30);i++){ T += 1/60; update(1/60, T); render(T, 1/60); } return (performance.now()-t0)/(n||30); },
+  flag(k,v){ MGFLAG[k] = v; return 'ok'; },
+  audio(){ return AC ? { ctx: AC, master } : null; },
+  audioInfo(){ return AC ? { state: AC.state, t: +AC.currentTime.toFixed(2),
+                             master: master ? +master.gain.value.toFixed(4) : null, muted } : null; }
+};
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
